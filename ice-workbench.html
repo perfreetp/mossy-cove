@@ -1,0 +1,1824 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>冰雕拼装工作台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9D%84%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg0:#0a111f; --bg1:#0e1830; --panel:#0f1c33; --panel2:#13233f;
+  --line:#1e3150; --line2:#284063;
+  --txt:#dce9f8; --muted:#8298b5; --faint:#5b708d;
+  --accent:#4cc7ff; --accent2:#7d5cff;
+  --good:#3ddc97; --warn:#ffd24d; --bad:#ff5470; --gold:#ffc84d;
+  --ice:#bfe8ff;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg0); color:var(--txt);
+  font:13px/1.5 "Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  display:grid; grid-template-rows:54px 1fr 30px; overflow:hidden;
+}
+button,input,select{font:inherit;color:inherit}
+button{
+  background:var(--panel2); border:1px solid var(--line2); border-radius:7px;
+  padding:5px 11px; cursor:pointer; white-space:nowrap; transition:.15s;
+}
+button:hover{border-color:var(--accent); color:#fff}
+button:disabled{opacity:.4; cursor:not-allowed}
+button.primary{background:linear-gradient(135deg,#1c7fd8,#35b6ff);border-color:#3aa7ee;color:#fff}
+button.danger:hover{border-color:var(--bad); color:var(--bad)}
+input[type=range]{accent-color:var(--accent); width:100%}
+input[type=text]{background:var(--bg0);border:1px solid var(--line2);border-radius:6px;padding:6px 9px;outline:none;width:100%}
+input[type=text]:focus{border-color:var(--accent)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#233a5c;border-radius:5px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== 顶栏 ===== */
+header{
+  display:flex; align-items:center; gap:14px; padding:0 16px;
+  background:linear-gradient(90deg,#0d1a30,#102342 55%,#0d1a30);
+  border-bottom:1px solid var(--line);
+}
+.brand{font-size:15px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.brand .flake{color:#8fd8ff;font-size:18px}
+.top-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;
+  border:1px solid var(--line2);border-radius:99px;padding:4px 10px;background:var(--bg0);
+}
+.badge .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.badge.ok .dot{background:var(--good);box-shadow:0 0 8px var(--good)}
+.badge.warn .dot{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.badge.err .dot{background:var(--bad);box-shadow:0 0 8px var(--bad)}
+
+/* ===== 主布局 ===== */
+main{display:grid;grid-template-columns:248px minmax(0,1fr) 346px;min-height:0}
+.panel{background:var(--panel);min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#libraryPanel{border-right:1px solid var(--line)}
+#rightPanel{border-left:1px solid var(--line)}
+.panel-h{
+  padding:10px 13px;font-weight:700;font-size:13px;letter-spacing:1px;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;
+  background:var(--bg1);flex:none;
+}
+.panel-h .sub{font-weight:400;color:var(--muted);font-size:11px;margin-left:auto}
+.panel-body{overflow:auto;padding:11px;flex:1;min-height:0}
+
+/* ===== 冰块库 ===== */
+.lib-hint{color:var(--muted);font-size:11.5px;margin:0 0 10px}
+.lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.ice-card{
+  background:linear-gradient(160deg,var(--panel2),#0d1930);
+  border:1px solid var(--line2);border-radius:10px;padding:10px 8px 9px;
+  text-align:center;cursor:grab;user-select:none;transition:.15s;
+}
+.ice-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+.ice-card:active{cursor:grabbing}
+.ice-cube{
+  width:46px;height:38px;margin:0 auto 7px;position:relative;
+  background:linear-gradient(135deg,rgba(190,232,255,.92),rgba(120,190,245,.55));
+  border:1px solid rgba(220,245,255,.8);border-radius:5px;
+  box-shadow:inset 0 0 12px rgba(255,255,255,.55),0 4px 10px rgba(76,199,255,.18);
+}
+.ice-cube::after{content:"";position:absolute;inset:5px 8px auto 8px;height:7px;border-radius:3px;background:rgba(255,255,255,.45);filter:blur(1px)}
+.ice-card .nm{font-size:12px;font-weight:600}
+.ice-card .dim{font-size:10.5px;color:var(--muted);margin-top:2px}
+
+/* ===== 视口 ===== */
+#viewport{position:relative;min-width:0;background:radial-gradient(1200px 700px at 55% 30%,#122544 0%,#0a1322 70%)}
+#three-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#hud{
+  position:absolute;left:12px;top:12px;width:238px;display:flex;flex-direction:column;gap:9px;
+  background:rgba(10,20,38,.82);border:1px solid var(--line);border-radius:11px;padding:11px;
+  backdrop-filter:blur(8px);pointer-events:auto;
+}
+#hud .row{display:flex;align-items:center;gap:8px}
+#hud label{font-size:12px;color:var(--muted);flex:none}
+#hud .val{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+.hud-div{height:1px;background:var(--line);margin:2px 0}
+.switch{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px}
+.switch input{accent-color:var(--accent)}
+#selInfo{font-size:11.5px;color:var(--muted);line-height:1.6}
+#selInfo b{color:var(--txt)}
+#hintBar{
+  position:absolute;left:50%;bottom:11px;transform:translateX(-50%);
+  background:rgba(10,20,38,.82);border:1px solid var(--line);border-radius:99px;
+  padding:6px 16px;font-size:11.5px;color:var(--muted);white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;
+}
+#hintBar b{color:var(--accent);font-weight:600}
+#previewBanner{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#1c7fd8,#35b6ff);color:#fff;font-weight:700;
+  padding:8px 22px;border-radius:99px;display:none;gap:14px;align-items:center;box-shadow:var(--shadow);
+}
+#previewBanner button{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:#fff}
+body.preview #previewBanner{display:flex}
+#dropHint{
+  position:absolute;inset:14px;border:2px dashed var(--accent);border-radius:14px;
+  display:none;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--accent);
+  background:rgba(76,199,255,.07);pointer-events:none;z-index:5;
+}
+#viewport.dragover #dropHint{display:flex}
+
+/* ===== 右侧约束区 ===== */
+#constraintPanel{flex:1.1;min-height:0}
+#planPanel{flex:1;min-height:0;border-top:1px solid var(--line)}
+.verdict{border-radius:10px;padding:10px 12px;margin-bottom:10px;border:1px solid var(--line2);font-weight:700;display:flex;align-items:center;gap:9px}
+.verdict.ok{background:rgba(61,220,151,.1);border-color:rgba(61,220,151,.45);color:var(--good)}
+.verdict.warn{background:rgba(255,210,77,.1);border-color:rgba(255,210,77,.45);color:var(--warn)}
+.verdict.fail{background:rgba(255,84,112,.12);border-color:rgba(255,84,112,.5);color:var(--bad)}
+.verdict.empty{background:var(--panel2);color:var(--muted)}
+.metric{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed var(--line);font-size:12px}
+.metric:last-child{border-bottom:none}
+.metric .k{color:var(--muted)}
+.metric .v{font-variant-numeric:tabular-nums;font-weight:600}
+.metric .v.good{color:var(--good)} .metric .v.warn{color:var(--warn)} .metric .v.bad{color:var(--bad)}
+.sec-title{font-size:11px;color:var(--faint);letter-spacing:1.5px;margin:12px 0 6px;text-transform:uppercase}
+#liveBox{background:var(--bg0);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:11.5px;line-height:1.7}
+#liveBox .tag{display:inline-block;min-width:52px;color:var(--faint)}
+.logbox{max-height:158px;overflow:auto;background:var(--bg0);border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:11px;line-height:1.7}
+.log-item .t{color:var(--faint);margin-right:6px}
+.log-item.good{color:var(--good)} .log-item.warn{color:var(--warn)} .log-item.bad{color:var(--bad)} .log-item.info{color:var(--muted)}
+
+/* ===== 方案区 / 顺序列表 ===== */
+#orderList{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;max-height:240px;overflow:auto}
+.order-row{
+  display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg0);cursor:pointer;font-size:12px;
+}
+.order-row:hover{border-color:var(--line2)}
+.order-row.sel{border-color:var(--accent);background:rgba(76,199,255,.08)}
+.order-row .idx{width:26px;color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
+.order-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-row .mini{border-radius:5px;padding:2px 6px;font-size:10.5px}
+.order-row button{padding:2px 7px;font-size:11px;border-radius:5px}
+.plan-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.plan-tools .wide{grid-column:1/-1}
+#planList{display:flex;flex-direction:column;gap:5px;max-height:170px;overflow:auto}
+.plan-row{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg0);border:1px solid var(--line);border-radius:8px;font-size:11.5px}
+.plan-row .meta{flex:1;min-width:0}
+.plan-row .meta .pname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-row .meta .pinfo{color:var(--faint);font-size:10.5px}
+.plan-row button{padding:2px 7px;font-size:10.5px;border-radius:5px}
+.placeholder{color:var(--faint);font-size:11.5px;text-align:center;padding:14px 0}
+
+/* ===== 底栏 ===== */
+footer{
+  border-top:1px solid var(--line);background:var(--bg1);
+  display:flex;align-items:center;gap:18px;padding:0 14px;font-size:11.5px;color:var(--muted);
+}
+footer .sp{margin-left:auto}
+
+/* ===== 弹层 ===== */
+#toastBox{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{
+  background:rgba(16,32,58,.95);border:1px solid var(--line2);border-radius:9px;padding:9px 18px;
+  font-size:12.5px;box-shadow:var(--shadow);animation:tin .25s ease;
+}
+.toast.good{border-color:var(--good)} .toast.warn{border-color:var(--warn)} .toast.bad{border-color:var(--bad)}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1}}
+.modal-mask{
+  position:fixed;inset:0;background:rgba(4,9,18,.62);z-index:90;display:none;
+  align-items:center;justify-content:center;backdrop-filter:blur(3px);
+}
+.modal-mask.open{display:flex}
+.modal{
+  width:min(480px,92vw);max-height:84vh;overflow:auto;
+  background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow);
+}
+.modal-h{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;display:flex;align-items:center}
+.modal-h .x{margin-left:auto;cursor:pointer;color:var(--muted);font-size:18px;line-height:1}
+.modal-b{padding:16px 18px}
+.modal-f{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.modal textarea{width:100%;min-height:150px;background:var(--bg0);border:1px solid var(--line2);border-radius:8px;padding:9px;color:var(--txt);font-family:Consolas,monospace;font-size:11.5px;resize:vertical}
+.kbd{display:inline-block;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-size:10.5px;background:var(--bg0);color:var(--txt);font-family:Consolas,monospace}
+.help-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:12px;align-items:center}
+.help-grid .d{color:var(--muted)}
+
+@media (max-width:1100px){
+  main{grid-template-columns:200px minmax(0,1fr) 300px}
+}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="flake">❄</span>冰雕拼装工作台 <span style="color:var(--faint);font-weight:400;font-size:11px">Three.js × Manifold-3D</span></div>
+  <div class="top-actions">
+    <span id="engineBadge" class="badge"><span class="dot"></span><span id="engineBadgeText">Manifold 初始化中…</span></span>
+    <button id="btnHelp" title="快捷键说明">快捷键</button>
+    <button id="btnUndo" title="Ctrl+Z">↶ 撤销</button>
+    <button id="btnRedo" title="Ctrl+Y">↷ 重做</button>
+    <button id="btnValidate">重新校验</button>
+    <button id="btnPreview" class="primary">整体预览</button>
+  </div>
+</header>
+
+<main>
+  <!-- 模块一：冰块库 -->
+  <section id="libraryPanel" class="panel">
+    <div class="panel-h">冰块库 <span class="sub">拖入或点击</span></div>
+    <div class="panel-body">
+      <p class="lib-hint">将冰块卡片拖入拼装区，或点击卡片直接放置到视口中心附近。</p>
+      <div id="libGrid" class="lib-grid"></div>
+    </div>
+  </section>
+
+  <!-- 模块二：拼装操作区 -->
+  <section id="viewport">
+    <canvas id="three-canvas"></canvas>
+    <div id="hud">
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="snapToggle" checked>面吸附对齐</label>
+      </div>
+      <div class="row">
+        <label>吸附阈值</label>
+        <input type="range" id="threshold" min="0.2" max="5" step="0.1" value="1.2">
+        <span class="val" id="thresholdVal">1.2</span>
+      </div>
+      <div class="hud-div"></div>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="verticalToggle">垂直移动模式 <span class="kbd">V</span></label>
+      </div>
+      <div class="hud-div"></div>
+      <div id="selInfo">未选中块体。<br>点击场景中的冰块进行选择。</div>
+    </div>
+    <div id="hintBar">
+      流程：<b>取块</b>（库拖入）→ <b>移动吸附</b>（拖动块体，靠近面自动对齐）→ <b>检查约束</b>（右侧提示）→ <b>导出方案</b>（方案区）
+    </div>
+    <div id="previewBanner">整体预览模式（自动旋转）<button id="btnExitPreview">退出预览</button></div>
+    <div id="dropHint">松开以放入冰块 / 导入方案文件</div>
+  </section>
+
+  <!-- 模块三+四：约束提示区 & 方案区 -->
+  <section id="rightPanel" class="panel">
+    <div id="constraintPanel" class="panel" style="background:transparent">
+      <div class="panel-h">约束提示区 <span class="sub" id="engineSrc">引擎：—</span></div>
+      <div class="panel-body">
+        <div id="verdictBox" class="verdict empty">尚未校验</div>
+        <div id="metricBox"></div>
+        <div class="sec-title">拖动实时检测</div>
+        <div id="liveBox"><span class="tag">状态</span>空闲</div>
+        <div class="sec-title">操作日志</div>
+        <div id="logBox" class="logbox"></div>
+      </div>
+    </div>
+    <div id="planPanel" class="panel" style="background:transparent">
+      <div class="panel-h">方案区 <span class="sub">拼装顺序 / 存取 / 导入导出</span></div>
+      <div class="panel-body">
+        <div class="sec-title" style="margin-top:0">拼装顺序列表</div>
+        <div id="orderList"></div>
+        <div class="plan-tools">
+          <input type="text" id="planName" placeholder="方案名称…" class="wide">
+          <button id="btnSavePlan" class="primary">保存到浏览器</button>
+          <button id="btnExport">导出为文件</button>
+          <button id="btnImportFile">导入文件</button>
+          <button id="btnImportJson">粘贴 JSON 导入</button>
+          <input type="file" id="fileInput" accept=".json,application/json" hidden>
+        </div>
+        <div class="sec-title">已保存方案</div>
+        <div id="planList"><div class="placeholder">暂无保存方案</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span id="stCount">块体 0</span>
+  <span id="stSnap">吸附：开 / 阈值 1.2</span>
+  <span id="stVerdict">校验：—</span>
+  <span class="sp" id="stFps">FPS —</span>
+  <span id="stEngine">Manifold：初始化中</span>
+</footer>
+
+<div id="toastBox"></div>
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <div class="modal-h"><span id="modalTitle">标题</span><span class="x" id="modalX">×</span></div>
+    <div class="modal-b" id="modalBody"></div>
+    <div class="modal-f" id="modalFooter"></div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ============================================================
+ * 1. 常量与冰块库定义
+ * ============================================================ */
+const HPI = Math.PI / 2;
+const EPS = 1e-4;            // 面贴合判定容差
+const FACE_EPS = 0.02;       // 面接触所需的最小侧向重叠
+const HISTORY_CAP = 20;      // 撤销/重做步数
+const CELL = 2;              // 空间哈希格边长
+const OFFSET_EPS = 0.01;     // Manifold 接触面 offset 逼近步长
+const AUTOSAVE_KEY = 'icebench.autosave.v1';
+const PLANS_KEY = 'icebench.plans.v1';
+
+const ICE_TYPES = [
+  { typeId:'std-1',  name:'标准冰砖',  size:[2, 1, 1],     color:'#bfe8ff' },
+  { typeId:'std-2',  name:'长冰砖',    size:[4, 1, 1],     color:'#a8ddff' },
+  { typeId:'cube-2', name:'大方冰块',  size:[2, 2, 2],     color:'#d4f0ff' },
+  { typeId:'half-1', name:'薄冰板',    size:[2, 0.5, 1],   color:'#e3f6ff' },
+  { typeId:'col-1',  name:'冰立柱',    size:[1, 3, 1],     color:'#9fd6ff' },
+  { typeId:'beam-1', name:'长冰梁',    size:[4, 0.8, 0.8], color:'#c2e9ff' },
+  { typeId:'tile-1', name:'大冰板',    size:[4, 0.5, 2],   color:'#eaf8ff' },
+  { typeId:'block-3',name:'巨冰砣',    size:[3, 2, 2],     color:'#b3e2ff' },
+];
+
+const state = {
+  blocks: new Map(),   // id -> block
+  order: [],           // 拼装顺序（id 数组）
+  nextId: 1,
+  selection: null,
+  threshold: 1.2,
+  snapEnabled: true,
+  verticalMode: false,
+  engine: 'init',      // manifold | analytic | error
+  manifold: null,
+  manifoldFailedReason: '',
+  preview: false,
+};
+
+const undoStack = [];
+const redoStack = [];
+let lastValidation = null;
+
+/* ============================================================
+ * 2. 小工具 / 日志 / 弹窗 / Toast
+ * ============================================================ */
+const $ = id => document.getElementById(id);
+const fmt = n => {
+  if (!isFinite(n)) return '—';
+  if (Math.abs(n) < 1e-9) return '0.000';
+  return n.toFixed(3);
+};
+const now = () => {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+};
+function toast(msg, kind='info', ms=2400){
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.textContent = msg;
+  $('toastBox').appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 320); }, ms);
+}
+function log(msg, kind='info'){
+  const box = $('logBox');
+  const el = document.createElement('div');
+  el.className = `log-item ${kind}`;
+  const ts = document.createElement('span');
+  ts.className = 't';
+  ts.textContent = now();
+  el.appendChild(ts);
+  el.appendChild(document.createTextNode(msg));
+  box.appendChild(el);
+  while (box.children.length > 120) box.firstChild.remove();
+  box.scrollTop = box.scrollHeight;
+}
+function openModal({title, bodyNode, buttons}){
+  $('modalTitle').textContent = title;
+  const mb = $('modalBody'); mb.innerHTML=''; mb.appendChild(bodyNode);
+  const mf = $('modalFooter'); mf.innerHTML='';
+  const mask = $('modalMask');
+  return new Promise(resolve => {
+    const close = val => { mask.classList.remove('open'); mask.onclick=null; resolve(val); };
+    buttons.forEach(b => {
+      const btn = document.createElement('button');
+      btn.textContent = b.text;
+      if (b.primary) btn.className = 'primary';
+      if (b.danger) btn.classList.add('danger');
+      btn.onclick = () => {
+        if (b.onClick === undefined) return close(b.value);
+        const r = b.onClick();
+        if (r !== false) close(r ?? b.value);
+      };
+      mf.appendChild(btn);
+    });
+    $('modalX').onclick = () => close(null);
+    mask.onclick = e => { if (e.target === mask) close(null); };
+    mask.classList.add('open');
+  });
+}
+async function promptModal(title, defaultValue='', label=''){
+  const wrap = document.createElement('div');
+  if (label) wrap.innerHTML = `<div style="margin-bottom:8px;color:var(--muted)">${label}</div>`;
+  const input = document.createElement('input');
+  input.type = 'text'; input.value = defaultValue;
+  wrap.appendChild(input);
+  const r = await openModal({title, bodyNode:wrap, buttons:[
+    {text:'取消', value:null}, {text:'确定', primary:true, value:'__input__'}
+  ]});
+  if (r === '__input__') return input.value.trim();
+  return null;
+}
+// 弹窗内回车确认（仅单行文本框；多行输入框需要保留换行）
+document.addEventListener('keydown', e => {
+  const mask = $('modalMask');
+  if (!mask.classList.contains('open') || e.key !== 'Enter') return;
+  const input = mask.querySelector('input[type=text]');
+  if (input && document.activeElement === input){
+    const btn = mask.querySelector('.modal-f .primary');
+    if (btn) btn.click();
+  }
+});
+async function confirmModal(title, message){
+  const wrap = document.createElement('div');
+  wrap.style.color = 'var(--muted)';
+  wrap.textContent = message;
+  const r = await openModal({title, bodyNode:wrap, buttons:[
+    {text:'取消', value:false}, {text:'确定', danger:true, value:true}
+  ]});
+  return r === true;
+}
+
+/* ============================================================
+ * 3. Manifold 引擎初始化（含解析兜底）
+ * ============================================================ */
+function setEngineBadge(kind, text){
+  const b = $('engineBadge');
+  b.className = `badge ${kind}`;
+  $('engineBadgeText').textContent = text;
+  $('stEngine').textContent = `Manifold：${text}`;
+}
+async function initManifold(){
+  const timeout = new Promise((_, rej)=> setTimeout(()=>rej(new Error('加载超时')), 9000));
+  try {
+    const mod = await import('https://cdn.jsdelivr.net/npm/manifold-3d@3.5.5/manifold.js');
+    const M = await Promise.race([mod.default(), timeout]);
+    M.setup(); // 官方封装要求：工厂 resolve 后手动挂载静态/原型方法
+    // 自检：两个单位立方体重叠 0.5 → 干涉体积应为 0.5*1*1 = 0.5
+    let a, b, inter;
+    try {
+      a = M.Manifold.cube([1,1,1], true).translate([0.25,0,0]);
+      b = M.Manifold.cube([1,1,1], true).translate([-0.25,0,0]);
+      inter = a.intersect(b);
+      const v = inter.volume();
+      if (Math.abs(v - 0.5) > 0.03) throw new Error('自检数值异常');
+    } finally {
+      [inter, a, b].forEach(x => x && x.delete());
+    }
+    state.manifold = M;
+    state.engine = 'manifold';
+    setEngineBadge('ok', 'Manifold WASM 已就绪');
+    $('engineSrc').textContent = '引擎：Manifold WASM 布尔计算';
+    log('Manifold-3D WASM 引擎加载成功，接触面与干涉体积由布尔运算计算', 'good');
+  } catch (err) {
+    state.engine = 'analytic';
+    state.manifoldFailedReason = String(err && err.message || err);
+    setEngineBadge('warn', 'Manifold 不可用 · 解析引擎兜底');
+    $('engineSrc').textContent = '引擎：盒体解析计算（与 Manifold 等价）';
+    log(`Manifold 加载失败（${state.manifoldFailedReason}），已切换解析引擎；盒体 90° 拼装下结果等价`, 'warn');
+  }
+}
+
+/* ============================================================
+ * 4. Three.js 场景
+ * ============================================================ */
+const canvas = $('three-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a1322);
+scene.fog = new THREE.Fog(0x0a1322, 38, 78);
+
+const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 200);
+camera.position.set(11, 9.5, 13);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.09;
+controls.target.set(0, 1.2, 0);
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.minDistance = 3;
+controls.maxDistance = 60;
+
+scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x13203a, 1.1));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.6);
+dirLight.position.set(9, 15, 7);
+scene.add(dirLight);
+scene.add(new THREE.AmbientLight(0x8fb8e8, 0.35));
+
+const grid = new THREE.GridHelper(48, 48, 0x2c4a76, 0x1a2c49);
+grid.material.transparent = true;
+grid.material.opacity = 0.85;
+scene.add(grid);
+
+const highlightGroup = new THREE.Group();
+scene.add(highlightGroup);
+
+function resize(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe($('viewport'));
+resize();
+
+/* ============================================================
+ * 5. 块体数据 / 网格 / 材质缓存
+ * ============================================================ */
+const geoCache = new Map();
+const matCache = new Map();
+const edgeGeoCache = new Map();
+const edgeMat = new THREE.LineBasicMaterial({ color:0xdff4ff, transparent:true, opacity:0.9 });
+function edgeGeometry(size){
+  const key = size.join('×');
+  let g = edgeGeoCache.get(key);
+  if (!g){ g = new THREE.EdgesGeometry(boxGeometry(size)); edgeGeoCache.set(key, g); }
+  return g;
+}
+
+function boxGeometry(size){
+  const key = size.join('×');
+  let g = geoCache.get(key);
+  if (!g){ g = new THREE.BoxGeometry(size[0], size[1], size[2]); geoCache.set(key, g); }
+  return g;
+}
+function iceMaterial(color){
+  let m = matCache.get(color);
+  if (!m){
+    m = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(color),
+      transparent: true, opacity: 0.62,
+      roughness: 0.18, metalness: 0,
+      clearcoat: 1, clearcoatRoughness: 0.22,
+      depthWrite: false,
+    });
+    matCache.set(color, m);
+  }
+  return m;
+}
+function eulerOf(b){
+  const r = b.rot || {};
+  return new THREE.Euler((r.x||0)*HPI, (r.y||0)*HPI, (r.z||0)*HPI, 'XYZ');
+}
+function computeAABB(b){
+  const e = eulerOf(b);
+  const m = new THREE.Matrix4().makeRotationFromEuler(e);
+  const h = b.size.map(v => v/2);
+  const mn = [Infinity,Infinity,Infinity], mx = [-Infinity,-Infinity,-Infinity];
+  const v = new THREE.Vector3();
+  for (const sx of [-1,1]) for (const sy of [-1,1]) for (const sz of [-1,1]){
+    v.set(sx*h[0], sy*h[1], sz*h[2]).applyMatrix4(m);
+    for (let k=0;k<3;k++){ mn[k]=Math.min(mn[k],v.getComponent(k)); mx[k]=Math.max(mx[k],v.getComponent(k)); }
+  }
+  b._aabb = {
+    min: mn.map((c,k)=>c + b.position[k]),
+    max: mx.map((c,k)=>c + b.position[k]),
+  };
+}
+function createBlock(data){
+  const b = {
+    id: data.id ?? state.nextId++,
+    typeId: data.typeId,
+    name: data.name,
+    size: [...data.size],
+    color: data.color,
+    position: [...data.position],
+    rot: { x:data.rot?.x||0, y:data.rot?.y||0, z:data.rot?.z||0 },
+    mesh: null, edges: null,
+  };
+  const mesh = new THREE.Mesh(boxGeometry(b.size), iceMaterial(b.color));
+  mesh.position.fromArray(b.position);
+  mesh.rotation.copy(eulerOf(b));
+  mesh.userData.id = b.id;
+  mesh.renderOrder = 1;
+  const edges = new THREE.LineSegments(edgeGeometry(b.size), edgeMat);
+  mesh.add(edges);
+  b.mesh = mesh; b.edges = edges;
+  scene.add(mesh);
+  computeAABB(b);
+  state.blocks.set(b.id, b);
+  return b;
+}
+function destroyBlock(b){
+  scene.remove(b.mesh);
+  state.blocks.delete(b.id);
+}
+function syncMesh(b){
+  b.mesh.position.fromArray(b.position);
+  b.mesh.rotation.copy(eulerOf(b));
+  computeAABB(b);
+}
+function clearAllBlocks(){
+  for (const b of state.blocks.values()) scene.remove(b.mesh);
+  state.blocks.clear();
+  state.order = [];
+  state.selection = null;
+}
+
+/* ============================================================
+ * 6. 空间哈希 / AABB 工具
+ * ============================================================ */
+function buildHash(blocks){
+  const map = new Map();
+  for (const b of blocks){
+    const a = b._aabb;
+    const i0=Math.floor(a.min[0]/CELL), i1=Math.floor(a.max[0]/CELL);
+    const j0=Math.floor(a.min[1]/CELL), j1=Math.floor(a.max[1]/CELL);
+    const k0=Math.floor(a.min[2]/CELL), k1=Math.floor(a.max[2]/CELL);
+    for (let i=i0;i<=i1;i++) for (let j=j0;j<=j1;j++) for (let k=k0;k<=k1;k++){
+      const key = i+'|'+j+'|'+k;
+      let arr = map.get(key);
+      if (!arr){ arr=[]; map.set(key,arr); }
+      arr.push(b);
+    }
+  }
+  return map;
+}
+function queryHash(map, aabb){
+  const out = new Set();
+  const i0=Math.floor(aabb.min[0]/CELL), i1=Math.floor(aabb.max[0]/CELL);
+  const j0=Math.floor(aabb.min[1]/CELL), j1=Math.floor(aabb.max[1]/CELL);
+  const k0=Math.floor(aabb.min[2]/CELL), k1=Math.floor(aabb.max[2]/CELL);
+  for (let i=i0;i<=i1;i++) for (let j=j0;j<=j1;j++) for (let k=k0;k<=k1;k++){
+    const arr = map.get(i+'|'+j+'|'+k);
+    if (arr) for (const b of arr) out.add(b);
+  }
+  return [...out];
+}
+function expandAABB(a, d){
+  return { min:a.min.map(c=>c-d), max:a.max.map(c=>c+d) };
+}
+function overlapLengths(a, b){
+  const o = [0,0,0];
+  for (let k=0;k<3;k++) o[k] = Math.min(a.max[k],b.max[k]) - Math.max(a.min[k],b.min[k]);
+  return o;
+}
+
+/* ============================================================
+ * 7. 面吸附算法
+ * ============================================================ */
+// 地面作为虚拟块：min/max 在 y=0，x/z 无限
+const GROUND = { id:null, _aabb:{ min:[-1e6,0,-1e6], max:[1e6,0,1e6] } };
+
+function findSnap(block, hash){
+  const a = block._aabb;
+  const candidates = queryHash(hash, expandAABB(a, state.threshold));
+  candidates.push(GROUND);
+  let best = null;
+  const consider = (other, delta, axis, sign) => {
+    // 用绝对距离判定：delta 的符号只表示对齐方向（块在目标的哪一侧），
+    // 这样从正/负两个方向靠近、以及向零厚度地面下落都能吸附
+    if (Math.abs(delta) > state.threshold + EPS) return;
+    // 块已贴地时地面候选 delta=0（不产生移动），跳过以免压制块间贴面吸附
+    if (other === GROUND && Math.abs(delta) <= EPS) return;
+    const ob = other._aabb;
+    for (let k=0;k<3;k++){
+      if (k === axis) continue;
+      const ov = Math.min(a.max[k], ob.max[k]) - Math.max(a.min[k], ob.min[k]);
+      if (ov < FACE_EPS) return;                       // 侧面重叠不足，不能贴面
+    }
+    const ad = Math.abs(delta);
+    if (!best || ad < best.absDelta) best = { delta, axis, sign, otherId:other.id, absDelta:ad };
+  };
+  for (const other of candidates){
+    if (other && other.id === block.id) continue;
+    const ob = other._aabb;
+    for (let k=0;k<3;k++){
+      if (other === GROUND && k !== 1) continue;
+      consider(other, ob.max[k] - a.min[k], k, +1);   // 移动块的负面 → 对方正面
+      consider(other, ob.min[k] - a.max[k], k, -1);   // 移动块的正面 → 对方负面
+    }
+  }
+  return best;
+}
+
+/* ============================================================
+ * 8. 解析引擎：盒体干涉 / 接触面
+ * ============================================================ */
+function analyticPair(a, b){
+  const o = overlapLengths(a._aabb, b._aabb);
+  const volume = o.every(v => v > 0) ? o[0]*o[1]*o[2] : 0;
+  let contact = null;
+  if (volume === 0){
+    for (let k=0;k<3;k++){
+      const flush1 = Math.abs(a._aabb.max[k] - b._aabb.min[k]);
+      const flush2 = Math.abs(b._aabb.max[k] - a._aabb.min[k]);
+      if (Math.min(flush1, flush2) <= EPS){
+        const others = [0,1,2].filter(x=>x!==k);
+        const w1 = o[others[0]], w2 = o[others[1]];
+        if (w1 > FACE_EPS && w2 > FACE_EPS){
+          contact = {
+            axis: k,
+            area: w1*w2,
+            sign: flush1 <= flush2 ? +1 : -1, // +1: a 正面贴 b 负面
+          };
+          break;
+        }
+      }
+    }
+  }
+  return { volume, contact, overlap:o };
+}
+
+/* ============================================================
+ * 9. Manifold 布尔校验（带资源回收与异常兜底）
+ * ============================================================ */
+let minkowskiKernel = null; // 复用的微小立方体（Minkowski 和实现 3D 膨胀）
+function manifoldPair(a, b, analytic){
+  const M = state.manifold;
+  if (!M) return null;
+  const aa = a._aabb, bb = b._aabb;
+  const sa = [aa.max[0]-aa.min[0], aa.max[1]-aa.min[1], aa.max[2]-aa.min[2]];
+  const sb = [bb.max[0]-bb.min[0], bb.max[1]-bb.min[1], bb.max[2]-bb.min[2]];
+  const ca = sa.map((s,k)=>(aa.min[k]+aa.max[k])/2);
+  const cb = sb.map((s,k)=>(bb.min[k]+bb.max[k])/2);
+  let ma, mb, inter, grown, grownInter = null;
+  try {
+    ma = M.Manifold.cube(sa, true).translate(ca);
+    mb = M.Manifold.cube(sb, true).translate(cb);
+    inter = ma.intersect(mb);
+    const volume = Math.max(0, inter.volume());
+    inter.delete(); inter = null;
+    let area = 0;
+    if (analytic.contact){
+      // 3D Manifold 无 offset：与边长 2ε 的微小立方体做 Minkowski 和等价膨胀，
+      // 每面外扩 ε，贴面处形成厚度 ε 的薄片，薄片体积 / ε ≈ 接触面积
+      if (!minkowskiKernel) minkowskiKernel = M.Manifold.cube([2*OFFSET_EPS, 2*OFFSET_EPS, 2*OFFSET_EPS], true);
+      grown = ma.minkowskiSum(minkowskiKernel);
+      grownInter = grown.intersect(mb);
+      area = Math.max(0, grownInter.volume() - volume) / OFFSET_EPS;
+      grownInter.delete(); grownInter = null;
+      grown.delete(); grown = null;
+    }
+    return { volume, area };
+  } catch (e) {
+    return { error: String(e && e.message || e) };
+  } finally {
+    [grownInter, grown, inter, mb, ma].forEach(x => x && x.delete());
+  }
+}
+
+/* ============================================================
+ * 10. 全量校验：接触 / 干涉 / 连通 / 悬空
+ * ============================================================ */
+function fullAnalyze(useManifold=true){
+  const blocks = [...state.blocks.values()];
+  for (const b of blocks) computeAABB(b);
+  const result = {
+    count: blocks.length,
+    contacts: [],          // {aId,bId,axis,area,center,widths,support}
+    interferences: [],    // {aId,bId,volume,min,max}
+    totalContactArea: 0,
+    totalInterference: 0,
+    groundContactIds: new Set(),
+    components: 0,
+    unsupported: [],
+    manifoldUsed: state.engine === 'manifold',
+    manifoldErrors: 0,
+    manifoldJobs: [],     // 待 Manifold 复核的块对（分片执行，避免阻塞帧）
+  };
+  if (!blocks.length) return result;
+
+  const hash = buildHash(blocks);
+  const checked = new Set();
+  for (const b of blocks){
+    // 地面接触
+    if (Math.abs(b._aabb.min[1]) <= EPS){
+      const footArea = (b._aabb.max[0]-b._aabb.min[0]) * (b._aabb.max[2]-b._aabb.min[2]);
+      result.groundContactIds.add(b.id);
+      result.contacts.push({ ground:true, aId:b.id, axis:1, area:footArea });
+    }
+    for (const other of queryHash(hash, b._aabb)){
+      if (other.id === b.id) continue;
+      const key = b.id < other.id ? b.id+':'+other.id : other.id+':'+b.id;
+      if (checked.has(key)) continue;
+      checked.add(key);
+      const an = analyticPair(b, other);
+      if (an.volume > 1e-9){
+        const mn=[0,0,0], mx=[0,0,0];
+        for (let k=0;k<3;k++){ mn[k]=Math.max(b._aabb.min[k],other._aabb.min[k]); mx[k]=Math.min(b._aabb.max[k],other._aabb.max[k]); }
+        const volume = an.volume;
+        const rec = { aId:b.id, bId:other.id, volume, min:mn, max:mx };
+        result.interferences.push(rec);
+        result.totalInterference += volume;
+        if (useManifold && state.engine === 'manifold')
+          result.manifoldJobs.push({ kind:'inter', a:b, other, an, rec });
+      } else if (an.contact){
+        const c = an.contact;
+        const axes = [0,1,2].filter(x=>x!==c.axis);
+        const widths = axes.map(k => Math.min(b._aabb.max[k],other._aabb.max[k]) - Math.max(b._aabb.min[k],other._aabb.min[k]));
+        const center = [0,0,0];
+        for (let k=0;k<3;k++) center[k] = (Math.max(b._aabb.min[k],other._aabb.min[k]) + Math.min(b._aabb.max[k],other._aabb.max[k]))/2;
+        const area = c.area;
+        // 支撑关系：b 的底面贴 other 顶面，或反之
+        let support = null;
+        if (c.axis === 1){
+          if (Math.abs(b._aabb.min[1] - other._aabb.max[1]) <= EPS) support = { top:other.id, bottom:b.id };
+          else if (Math.abs(other._aabb.min[1] - b._aabb.max[1]) <= EPS) support = { top:b.id, bottom:other.id };
+        }
+        const rec = { ground:false, aId:b.id, bId:other.id, axis:c.axis, area, center, widths, support };
+        result.contacts.push(rec);
+        result.totalContactArea += area;
+        if (useManifold && state.engine === 'manifold')
+          result.manifoldJobs.push({ kind:'contact', a:b, other, an, rec });
+      }
+    }
+  }
+
+  // 连通分量（并查集，仅块间接触）
+  const parent = new Map(blocks.map(b=>[b.id,b.id]));
+  const find = x => { while (parent.get(x)!==x){ parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
+  const union = (x,y) => parent.set(find(x), find(y));
+  for (const c of result.contacts) if (!c.ground) union(c.aId, c.bId);
+  result.components = new Set(blocks.map(b=>find(b.id))).size;
+
+  // 悬空判定：从接地块沿支撑关系向上传播
+  const supported = new Set(result.groundContactIds);
+  let changed = true;
+  while (changed){
+    changed = false;
+    for (const c of result.contacts){
+      if (!c.support) continue;
+      if (supported.has(c.support.top) && !supported.has(c.support.bottom)){
+        supported.add(c.support.bottom); changed = true;
+      }
+    }
+  }
+  result.unsupported = blocks.filter(b=>!supported.has(b.id)).map(b=>b.id);
+  return result;
+}
+
+/* 对已完成的解析结果做 Manifold 复核；isCancelled 用于场景变化时丢弃过期任务。
+ * 按时间片（≤6ms）跨帧处理块对，避免一次性阻塞主线程。 */
+let manifoldToken = 0;
+function refineWithManifold(result, token){
+  return new Promise(resolve => {
+    const jobs = result.manifoldJobs;
+    let idx = 0;
+    const step = () => {
+      if (token !== manifoldToken){ resolve(false); return; } // 已被更新的校验取代
+      const sliceStart = performance.now();
+      while (idx < jobs.length && performance.now() - sliceStart < 6){
+        const job = jobs[idx++];
+        const mr = manifoldPair(job.a, job.other, job.an);
+        if (!mr || mr.error){ result.manifoldErrors++; continue; }
+        if (job.kind === 'inter'){
+          result.totalInterference += mr.volume - job.rec.volume;
+          job.rec.volume = mr.volume;
+        } else {
+          result.totalContactArea += mr.area - job.rec.area;
+          job.rec.area = mr.area;
+        }
+      }
+      if (idx < jobs.length) requestAnimationFrame(step);
+      else resolve(true);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+function verdictOf(r){
+  if (r.count === 0) return ['empty', '空场景：从冰块库拖入冰块开始拼装'];
+  if (r.totalInterference > 1e-6) return ['fail', `拼装不成立：存在 ${r.interferences.length} 处块体干涉`];
+  const warns = [];
+  if (r.components > 1) warns.push(`${r.components} 个互不连接的部分`);
+  if (r.unsupported.length) warns.push(`${r.unsupported.length} 个悬空块`);
+  if (warns.length) return ['warn', `可拼装但有警告：${warns.join('，')}`];
+  return ['ok', '拼装成立：无干涉，结构连接且支撑完整'];
+}
+
+/* ============================================================
+ * 11. 高亮渲染 & 约束面板
+ * ============================================================ */
+const matContact = new THREE.MeshBasicMaterial({ color:0x37e6ff, transparent:true, opacity:0.55, depthWrite:false });
+const matInterf  = new THREE.MeshBasicMaterial({ color:0xff3b5c, transparent:true, opacity:0.42, depthWrite:false });
+const matSnap    = new THREE.MeshBasicMaterial({ color:0xffc84d, transparent:true, opacity:0.85, depthWrite:false });
+
+function clearHighlights(){
+  while (highlightGroup.children.length){
+    const m = highlightGroup.children.pop();
+    m.geometry?.dispose();
+  }
+}
+function faceMarker(center, axis, w1, w2, material, extra=0){
+  const dims = [0.04,0.04,0.04];
+  const others = [0,1,2].filter(k=>k!==axis);
+  dims[others[0]] = w1; dims[others[1]] = w2;
+  dims[axis] = 0.04 + extra;
+  const g = new THREE.BoxGeometry(...dims);
+  const m = new THREE.Mesh(g, material);
+  m.position.fromArray(center);
+  m.renderOrder = 5;
+  highlightGroup.add(m);
+  return m;
+}
+function boxMarker(min, max, material){
+  const size = max.map((c,k)=>Math.max(c-min[k], 0.02));
+  const center = min.map((c,k)=>(c+max[k])/2);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+  m.position.fromArray(center);
+  m.renderOrder = 5;
+  highlightGroup.add(m);
+}
+
+function renderValidation(r){
+  lastValidation = r;
+  clearHighlights();
+  for (const c of r.contacts){
+    if (c.ground) continue;
+    faceMarker(c.center, c.axis, c.widths[0], c.widths[1], matContact);
+  }
+  for (const it of r.interferences) boxMarker(it.min, it.max, matInterf);
+
+  const [vk, vtxt] = verdictOf(r);
+  const vb = $('verdictBox');
+  vb.className = `verdict ${vk}`;
+  vb.textContent = vtxt;
+
+  const engineNote = r.manifoldUsed
+    ? (r.manifoldErrors ? `Manifold 计算异常 ${r.manifoldErrors} 处，已回退解析值` : 'Manifold 布尔计算')
+    : '解析引擎（盒体等价）';
+  const rows = [
+    ['场景块体数', r.count, ''],
+    ['接触面对数', r.contacts.length, ''],
+    ['接触面总面积', fmt(r.totalContactArea), 'good'],
+    ['干涉对数', r.interferences.length, r.interferences.length?'bad':'good'],
+    ['干涉总体积', fmt(r.totalInterference), r.totalInterference>1e-6?'bad':'good'],
+    ['连接分量数', r.components, r.components>1?'warn':'good'],
+    ['悬空块数', r.unsupported.length, r.unsupported.length?'warn':'good'],
+    ['计算来源', engineNote, ''],
+  ];
+  $('metricBox').innerHTML = rows.map(([k,v,cls]) =>
+    `<div class="metric"><span class="k">${k}</span><span class="v ${cls}">${v}</span></div>`).join('');
+
+  $('stCount').textContent = `块体 ${r.count}`;
+  $('stVerdict').textContent = `校验：${vtxt.split('：')[0]}`;
+}
+
+let manifoldPassTimer = null;
+function runFullValidation(announce=true){
+  // 第一阶段：盒体解析即时出结果（90° 旋转下与布尔运算几何等价）
+  const r = fullAnalyze(false);
+  renderValidation(r);
+  // 第二阶段：Manifold 防抖 + 分片复核，避免连续操作时阻塞输入帧
+  clearTimeout(manifoldPassTimer);
+  if (state.engine === 'manifold' && state.blocks.size){
+    const token = ++manifoldToken;
+    manifoldPassTimer = setTimeout(()=>{
+      if (token !== manifoldToken) return;
+      const rm = fullAnalyze(true); // 收集 manifoldJobs
+      refineWithManifold(rm, token).then(done => {
+        if (!done) return; // 已被更新结果取代
+        renderValidation(rm);
+        lastValidation = rm;
+        refreshOrderList(); // 刷新干涉标记
+      });
+    }, 250);
+  }
+  if (announce){
+    const [vk] = verdictOf(r);
+    if (vk === 'fail') log(vtxtSafe(r), 'bad');
+    else if (vk === 'warn') log(vtxtSafe(r), 'warn');
+    else if (vk === 'ok') log(vtxtSafe(r), 'good');
+  }
+  return r;
+}
+function vtxtSafe(r){ return verdictOf(r)[1]; }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+/* ============================================================
+ * 12. 选中框 / Hover
+ * ============================================================ */
+let selHelper = null, hoverHelper = null;
+function selectBlock(id){
+  state.selection = id;
+  if (selHelper){ scene.remove(selHelper); selHelper.geometry.dispose(); selHelper = null; }
+  const b = id != null ? state.blocks.get(id) : null;
+  if (b){
+    selHelper = new THREE.BoxHelper(b.mesh, 0xffc84d);
+    scene.add(selHelper);
+  }
+  refreshSelectionInfo();
+  refreshOrderList();
+}
+function refreshSelectionInfo(){
+  const b = state.selection != null ? state.blocks.get(state.selection) : null;
+  if (!b){ $('selInfo').innerHTML = '未选中块体。<br>点击场景中的冰块进行选择。'; return; }
+  const nm = `${b.name} #${b.id}`;
+  $('selInfo').innerHTML =
+    `<b>${nm}</b><br>尺寸：${b.size.join(' × ')}<br>` +
+    `位置：(${b.position.map(fmt).join(', ')})<br>` +
+    `旋转(90°步)：X${b.rot.x} Y${b.rot.y} Z${b.rot.z}<br>` +
+    `<span style="color:var(--faint)">Q/E Y轴旋转 · R/F X轴 · T/G Z轴 · ↑↓ 升降 · Del 删除</span>`;
+}
+
+/* ============================================================
+ * 13. 交互：拾取 / 拖拽 / 吸附 / 实时检测
+ * ============================================================ */
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+const dragPlane = new THREE.Plane();
+const planeHit = new THREE.Vector3();
+const grabOffset = new THREE.Vector3();
+const camDir = new THREE.Vector3();
+
+let drag = null;       // { block, hash, moved, lastManifoldTs, liveMarkers }
+let downPoint = null;
+
+function setNDC(e){
+  const rect = canvas.getBoundingClientRect();
+  ndc.x = ((e.clientX - rect.left)/rect.width)*2 - 1;
+  ndc.y = -((e.clientY - rect.top)/rect.height)*2 + 1;
+}
+function pickBlock(e){
+  setNDC(e);
+  raycaster.setFromCamera(ndc, camera);
+  const meshes = [...state.blocks.values()].map(b=>b.mesh);
+  const hits = raycaster.intersectObjects(meshes, false);
+  return hits.length ? state.blocks.get(hits[0].object.userData.id) : null;
+}
+
+canvas.addEventListener('pointerdown', e => {
+  if (state.preview) return;
+  const b = pickBlock(e);
+  if (!b) return;
+  // 命中块体：立刻禁用 OrbitControls，避免同元素上的控件监听器启动旋转
+  controls.enabled = false;
+  e.stopPropagation();
+  downPoint = { x:e.clientX, y:e.clientY, block:b };
+}, true);
+
+window.addEventListener('pointermove', e => {
+  if (downPoint && !drag){
+    if (Math.hypot(e.clientX-downPoint.x, e.clientY-downPoint.y) > 4) startDrag(e);
+  }
+  if (drag) onDragMove(e);
+});
+window.addEventListener('pointerup', e => {
+  if (drag){ endDrag(); return; }
+  controls.enabled = true;
+  if (downPoint){
+    const hit = pickBlock(e);
+    if (hit) selectBlock(hit.id);
+    else selectBlock(null);
+  }
+  downPoint = null;
+});
+
+function startDrag(e){
+  const b = downPoint.block;
+  selectBlock(b.id);
+  controls.enabled = false;
+  const statics = [...state.blocks.values()].filter(x=>x.id !== b.id);
+  drag = { block:b, hash:buildHash(statics), moved:false };
+  beginHistory();
+  // 抓取偏移：射线与拖拽平面交点 - 块中心
+  updateDragPlane(e);
+  raycaster.setFromCamera(ndc, camera);
+  if (raycaster.ray.intersectPlane(dragPlane, planeHit)){
+    grabOffset.copy(planeHit).sub(b.mesh.position);
+  } else grabOffset.set(0,0,0);
+  canvas.setPointerCapture?.(e.pointerId);
+  log(`开始移动 ${b.name} #${b.id}`, 'info');
+}
+function updateDragPlane(e){
+  const b = drag.block;
+  if (state.verticalMode){
+    camera.getWorldDirection(camDir);
+    camDir.y = 0; camDir.normalize();
+    dragPlane.setFromNormalAndCoplanarPoint(camDir, b.mesh.position);
+  } else {
+    dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0,1,0), b.mesh.position);
+  }
+  setNDC(e);
+}
+function onDragMove(e){
+  setNDC(e);
+  raycaster.setFromCamera(ndc, camera);
+  if (!raycaster.ray.intersectPlane(dragPlane, planeHit)) return;
+  const b = drag.block;
+  const target = planeHit.clone().sub(grabOffset);
+  if (state.verticalMode) target.x = b.position[0], target.z = b.position[2];
+  else target.y = b.position[1];
+
+  b.position = target.toArray();
+  computeAABB(b);
+
+  let snap = null;
+  if (state.snapEnabled){
+    snap = findSnap(b, drag.hash);
+    if (snap){
+      b.position[snap.axis] += snap.delta;
+      computeAABB(b);
+      drag.moved = true;
+    }
+  }
+  syncMesh(b);
+  if (selHelper) selHelper.update();
+  liveCheck(snap);
+}
+function endDrag(){
+  const b = drag.block;
+  controls.enabled = true;
+  const wasMoved = drag.moved;
+  drag = null;
+  if (wasMoved) log(`放置 ${b.name} #${b.id}`, 'info');
+  endHistory(wasMoved ? '移动块体' : null);
+  scheduleAutosave();
+  runFullValidation(false);
+  refreshSelectionInfo();
+  refreshOrderList();
+}
+
+/* 拖动中的实时接触/干涉检测：纯解析每帧执行（盒体 90° 拼装下与 Manifold 等价），
+ * Manifold 布尔复核只在放置后的全量校验（防抖）中进行，保证拖拽帧恒定低成本 */
+function liveCheck(snap){
+  const b = drag.block;
+  const near = queryHash(drag.hash, expandAABB(b._aabb, Math.max(state.threshold, 0.1)));
+  let interfVol = 0, interfPairs = 0, contactArea = 0, contactPairs = 0;
+
+  clearHighlights();
+  for (const other of near){
+    const an = analyticPair(b, other);
+    if (an.volume > 1e-9){
+      interfPairs++; interfVol += an.volume;
+      const mn=[0,0,0], mx=[0,0,0];
+      for (let k=0;k<3;k++){ mn[k]=Math.max(b._aabb.min[k],other._aabb.min[k]); mx[k]=Math.min(b._aabb.max[k],other._aabb.max[k]); }
+      boxMarker(mn, mx, matInterf);
+    } else if (an.contact){
+      contactPairs++; contactArea += an.contact.area;
+      const axes=[0,1,2].filter(x=>x!==an.contact.axis);
+      const widths = axes.map(k => Math.min(b._aabb.max[k],other._aabb.max[k]) - Math.max(b._aabb.min[k],other._aabb.min[k]));
+      const center=[0,0,0];
+      for (let k=0;k<3;k++) center[k]=(Math.max(b._aabb.min[k],other._aabb.min[k])+Math.min(b._aabb.max[k],other._aabb.max[k]))/2;
+      faceMarker(center, an.contact.axis, widths[0], widths[1], matSnap);
+    }
+  }
+  // 吸附候选面高亮
+  if (snap && snap.otherId != null){
+    const other = state.blocks.get(snap.otherId);
+    if (other){
+      const axes=[0,1,2].filter(x=>x!==snap.axis);
+      const widths = axes.map(k => Math.min(b._aabb.max[k],other._aabb.max[k]) - Math.max(b._aabb.min[k],other._aabb.min[k]));
+      const center=[0,0,0];
+      for (let k=0;k<3;k++) center[k]=(Math.max(b._aabb.min[k],other._aabb.min[k])+Math.min(b._aabb.max[k],other._aabb.max[k]))/2;
+      faceMarker(center, snap.axis, widths[0], widths[1], matSnap, 0.02);
+    }
+  }
+  const snapTxt = snap
+    ? (snap.otherId==null ? '已吸附到地面' : `吸附 → ${state.blocks.get(snap.otherId)?.name} #${snap.otherId}（${['X','Y','Z'][snap.axis]} 面，平移 ${fmt(Math.abs(snap.delta))}）`)
+    : '无吸附候选';
+  const cls = interfVol > 1e-6 ? 'bad' : (contactPairs ? 'good' : '');
+  $('liveBox').innerHTML =
+    `<div><span class="tag">吸附</span>${snapTxt}</div>` +
+    `<div><span class="tag">接触面</span>${contactPairs} 对 / ${fmt(contactArea)}</div>` +
+    `<div class="${cls}"><span class="tag">干涉</span>${interfPairs} 对 / 体积 ${fmt(interfVol)}${interfVol>1e-6?' ⚠ 存在干涉':''}</div>`;
+}
+
+canvas.addEventListener('pointermove', e => {
+  if (drag || state.preview) return;
+  const b = pickBlock(e);
+  canvas.style.cursor = b ? 'pointer' : 'default';
+  if (hoverHelper){ scene.remove(hoverHelper); hoverHelper.geometry.dispose(); hoverHelper = null; }
+  if (b && b.id !== state.selection){
+    hoverHelper = new THREE.BoxHelper(b.mesh, 0xffffff);
+    hoverHelper.material.opacity = 0.5; hoverHelper.material.transparent = true;
+    scene.add(hoverHelper);
+  }
+});
+
+/* ============================================================
+ * 14. 增块 / 旋转 / 升降 / 删除
+ * ============================================================ */
+function addBlock(type, point){
+  const data = {
+    typeId: type.typeId, name: type.name, size:[...type.size], color: type.color,
+    position: point ? [point.x, type.size[1]/2, point.z] : freeDropPoint(type.size),
+    rot:{x:0,y:0,z:0},
+  };
+  beginHistory();
+  const b = createBlock(data);
+  state.order.push(b.id);
+  // 放入后立即尝试一次吸附
+  const hash = buildHash([...state.blocks.values()].filter(x=>x.id!==b.id));
+  const snap = findSnap(b, hash);
+  if (snap){ b.position[snap.axis] += snap.delta; syncMesh(b); }
+  selectBlock(b.id);
+  endHistory(`加入 ${b.name}`);
+  scheduleAutosave();
+  runFullValidation(false);
+  refreshOrderList();
+  log(`从冰块库取入 ${b.name} #${b.id}`, 'good');
+  return b;
+}
+function freeDropPoint(size){
+  const base = controls.target;
+  const hash = buildHash([...state.blocks.values()]);
+  for (let i=0;i<8;i++){
+    const p = [base.x + (i%4)*(size[0]+0.6), size[1]/2, base.z + Math.floor(i/4)*(size[2]+0.6)];
+    const probeAABB = { min:p.map((c,k)=>c-size[k]/2), max:p.map((c,k)=>c+size[k]/2) };
+    const clash = queryHash(hash, probeAABB).some(o => overlapLengths(probeAABB, o._aabb).every(v=>v>0));
+    if (!clash) return p;
+  }
+  return [base.x, size[1]/2, base.z];
+}
+function rotateSelected(axis, dir){
+  const b = state.blocks.get(state.selection);
+  if (!b) return;
+  beginHistory();
+  b.rot[axis] = (b.rot[axis] + dir + 4) % 4;
+  syncMesh(b);
+  // 旋转后若穿地则抬回地面
+  if (b._aabb.min[1] < -EPS){ b.position[1] -= b._aabb.min[1]; syncMesh(b); }
+  if (selHelper) selHelper.update();
+  endHistory(`旋转 ${b.name} #${b.id}`);
+  scheduleAutosave();
+  runFullValidation(false);
+  refreshSelectionInfo();
+}
+let lastNudge = 0;
+function nudgeSelected(dy){
+  const b = state.blocks.get(state.selection);
+  if (!b) return;
+  const ts = performance.now();
+  const coalesce = ts - lastNudge < 900;
+  if (!coalesce) beginHistory();
+  b.position[1] += dy;
+  syncMesh(b);
+  if (selHelper) selHelper.update();
+  if (!coalesce) endHistory(`升降 ${b.name} #${b.id}`);
+  else amendHistory();
+  lastNudge = ts;
+  scheduleAutosave();
+  runFullValidation(false);
+  refreshSelectionInfo();
+}
+function deleteSelected(){
+  const b = state.blocks.get(state.selection);
+  if (!b) return;
+  beginHistory();
+  const idx = state.order.indexOf(b.id);
+  if (idx >= 0) state.order.splice(idx,1);
+  destroyBlock(b);
+  selectBlock(null);
+  endHistory(`删除 ${b.name}`);
+  scheduleAutosave();
+  runFullValidation(false);
+  refreshOrderList();
+  log(`删除 ${b.name} #${b.id}`, 'warn');
+}
+
+/* ============================================================
+ * 15. 撤销 / 重做（最近 20 步，结构化快照）
+ * ============================================================ */
+let historyBefore = null;
+function snapshot(){
+  return structuredClone({
+    nextId: state.nextId,
+    threshold: state.threshold,
+    order: [...state.order],
+    blocks: [...state.blocks.values()].map(b => ({
+      id:b.id, typeId:b.typeId, name:b.name, size:[...b.size], color:b.color,
+      position:[...b.position], rot:{...b.rot},
+    })),
+  });
+}
+function beginHistory(){ historyBefore = snapshot(); redoStack.length = 0; }
+function endHistory(label){
+  if (!historyBefore) return;
+  undoStack.push({ label: label || '操作', before: historyBefore, after: snapshot() });
+  if (undoStack.length > HISTORY_CAP) undoStack.shift();
+  historyBefore = null;
+  updateHistoryButtons();
+}
+function amendHistory(){
+  const top = undoStack[undoStack.length-1];
+  if (top) top.after = snapshot();
+}
+function restoreSnapshot(snap){
+  clearAllBlocks();
+  state.nextId = snap.nextId;
+  for (const d of snap.blocks) createBlock(d);
+  state.order = [...snap.order];
+  state.threshold = snap.threshold ?? state.threshold;
+  $('threshold').value = state.threshold;
+  $('thresholdVal').textContent = Number(state.threshold).toFixed(1);
+  selectBlock(null);
+  runFullValidation(false);
+  refreshOrderList();
+  scheduleAutosave();
+}
+function undo(){
+  const item = undoStack.pop();
+  if (!item) return;
+  redoStack.push(item);
+  restoreSnapshot(item.before);
+  updateHistoryButtons();
+  log(`撤销：${item.label}`, 'info');
+}
+function redo(){
+  const item = redoStack.pop();
+  if (!item) return;
+  undoStack.push(item);
+  restoreSnapshot(item.after);
+  updateHistoryButtons();
+  log(`重做：${item.label}`, 'info');
+}
+function updateHistoryButtons(){
+  $('btnUndo').disabled = !undoStack.length;
+  $('btnRedo').disabled = !redoStack.length;
+}
+
+/* ============================================================
+ * 16. 拼装顺序列表
+ * ============================================================ */
+function refreshOrderList(){
+  const list = $('orderList');
+  list.innerHTML = '';
+  if (!state.order.length){
+    list.innerHTML = '<div class="placeholder">尚无块体，从左侧冰块库取块</div>';
+    return;
+  }
+  state.order.forEach((id, i) => {
+    const b = state.blocks.get(id);
+    if (!b) return;
+    const row = document.createElement('div');
+    row.className = 'order-row' + (state.selection===id?' sel':'');
+    const hasInterf = lastValidation?.interferences.some(x=>x.aId===id||x.bId===id);
+    row.innerHTML =
+      `<span class="idx">${String(i+1).padStart(2,'0')}</span>` +
+      `<span class="nm">${b.name} #${b.id}</span>` +
+      `${hasInterf?'<span class="mini" style="color:var(--bad);border:1px solid var(--bad)">干涉</span>':''}` +
+      `<button data-act="up" title="上移">↑</button><button data-act="down" title="下移">↓</button>`;
+    row.onclick = () => {
+      selectBlock(id);
+      frameBlock(b);
+    };
+    row.querySelector('[data-act=up]').onclick = e => {
+      e.stopPropagation(); moveOrder(i, -1);
+    };
+    row.querySelector('[data-act=down]').onclick = e => {
+      e.stopPropagation(); moveOrder(i, +1);
+    };
+    list.appendChild(row);
+  });
+}
+function moveOrder(i, dir){
+  const j = i + dir;
+  if (j < 0 || j >= state.order.length) return;
+  beginHistory();
+  const [x] = state.order.splice(i,1);
+  state.order.splice(j,0,x);
+  endHistory(`调整拼装顺序（${i+1}→${j+1}）`);
+  scheduleAutosave();
+  refreshOrderList();
+}
+function frameBlock(b){
+  const center = new THREE.Vector3().fromArray(b.position);
+  const dist = Math.max(...b.size) * 2.4 + 2;
+  const dirV = camera.position.clone().sub(controls.target).normalize();
+  controls.target.copy(center);
+  camera.position.copy(center).add(dirV.multiplyScalar(dist));
+  controls.update();
+}
+
+/* ============================================================
+ * 17. 方案保存 / 导出 / 导入
+ * ============================================================ */
+function planJSON(name){
+  return {
+    app:'ice-sculpture-workbench',
+    version:1,
+    name,
+    savedAt:new Date().toISOString(),
+    threshold:state.threshold,
+    order:[...state.order],
+    blocks:[...state.blocks.values()].map(b=>({
+      id:b.id, typeId:b.typeId, name:b.name, size:[...b.size], color:b.color,
+      position:[...b.position], rot:{...b.rot},
+    })),
+  };
+}
+function loadPlans(){
+  try { return JSON.parse(localStorage.getItem(PLANS_KEY)) || []; }
+  catch { return []; }
+}
+function storePlans(plans){ localStorage.setItem(PLANS_KEY, JSON.stringify(plans)); }
+
+async function savePlan(){
+  const def = `冰雕方案 ${new Date().toLocaleString('zh-CN',{hour12:false})}`;
+  const name = await promptModal('保存方案到浏览器', $('planName').value || def);
+  if (!name) return;
+  const plans = loadPlans();
+  const plan = planJSON(name);
+  const idx = plans.findIndex(p=>p.name===name);
+  if (idx >= 0){
+    const ok = await confirmModal('覆盖确认', `已存在同名方案「${name}」，是否覆盖？`);
+    if (!ok) return;
+    plans[idx] = plan;
+  } else plans.push(plan);
+  storePlans(plans);
+  $('planName').value = name;
+  refreshPlanList();
+  toast(`方案「${name}」已保存到浏览器`, 'good');
+  log(`保存方案「${name}」（${plan.blocks.length} 块）`, 'good');
+}
+function refreshPlanList(){
+  const plans = loadPlans();
+  const box = $('planList');
+  if (!plans.length){ box.innerHTML = '<div class="placeholder">暂无保存方案</div>'; return; }
+  box.innerHTML = '';
+  plans.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'plan-row';
+    const d = new Date(p.savedAt);
+    row.innerHTML =
+      `<div class="meta"><div class="pname"></div>` +
+      `<div class="pinfo">${p.blocks.length} 块 · ${d.toLocaleString('zh-CN',{hour12:false})}</div></div>` +
+      `<button data-act="load">载入</button><button data-act="export">导出</button><button data-act="del">删除</button>`;
+    row.querySelector('.pname').textContent = p.name; // 文本节点，避免方案名注入 HTML
+    row.querySelector('[data-act=load]').onclick = ()=> loadPlanByName(p.name);
+    row.querySelector('[data-act=export]').onclick = ()=> downloadPlan(p);
+    row.querySelector('[data-act=del]').onclick = async ()=>{
+      const ok = await confirmModal('删除方案', `确定删除「${p.name}」？此操作不可恢复。`);
+      if (!ok) return;
+      const all = loadPlans();
+      const at = all.findIndex(x=>x.name===p.name);
+      if (at >= 0){ all.splice(at,1); storePlans(all); }
+      refreshPlanList(); toast('方案已删除', 'warn');
+    };
+    box.appendChild(row);
+  });
+}
+async function loadPlanByName(name){
+  const p = loadPlans().find(x=>x.name===name);
+  if (!p){ toast('方案不存在或已被删除', 'bad'); refreshPlanList(); return; }
+  if (state.blocks.size && !(await confirmModal('载入方案', '载入将替换当前工作区，是否继续？（可先撤销恢复）'))) return;
+  beginHistory();
+  applyPlan(p);
+  endHistory(`载入方案「${p.name}」`);
+  toast(`已载入方案「${p.name}」`, 'good');
+  log(`载入方案「${p.name}」（${p.blocks.length} 块）`, 'good');
+}
+function applyPlan(p){
+  clearAllBlocks();
+  const idMap = new Map();
+  for (const d of p.blocks){
+    const nd = {
+      ...d,
+      name: d.name || '导入冰块',
+      color: d.color || '#bfe8ff',
+      typeId: d.typeId || 'imported',
+      size: d.size || [1,1,1],
+      rot: d.rot || {x:0,y:0,z:0},
+    };
+    state.nextId = Math.max(state.nextId, nd.id+1);
+    const b = createBlock(nd);
+    idMap.set(d.id, b.id);
+  }
+  state.order = p.order.map(id => idMap.get(id) ?? id).filter(id=>state.blocks.has(id));
+  state.threshold = p.threshold ?? state.threshold;
+  $('threshold').value = state.threshold;
+  $('thresholdVal').textContent = Number(state.threshold).toFixed(1);
+  selectBlock(null);
+  runFullValidation(false);
+  refreshOrderList();
+  fitAll();
+}
+function downloadJson(obj, filename){
+  const text = JSON.stringify(obj, null, 2);
+  try {
+    const blob = new Blob([text], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    return true;
+  } catch (e) { return false; }
+}
+function exportPlan(){
+  if (!state.blocks.size){ toast('工作区为空，无可导出内容', 'warn'); return; }
+  const name = $('planName').value || 'ice-sculpture-plan';
+  const plan = planJSON(name);
+  if (!downloadJson(plan, `${name}.json`)){
+    // 沙箱拦截下载时提供复制方案
+    copyJsonModal(plan, '导出方案（下载被拦截，可复制 JSON）');
+  } else {
+    toast('方案文件已导出', 'good');
+    log(`导出方案文件「${name}.json」`, 'good');
+  }
+}
+async function copyJsonModal(obj, title){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = '<div style="margin-bottom:8px;color:var(--muted)">复制以下 JSON 保存即可：</div>';
+  const ta = document.createElement('textarea');
+  ta.value = JSON.stringify(obj, null, 2);
+  wrap.appendChild(ta);
+  await openModal({ title, bodyNode:wrap, buttons:[
+    { text:'复制 JSON', primary:true, onClick:()=>{
+        ta.select();
+        const ok = copyText(ta.value);
+        toast(ok ? '已复制到剪贴板' : '复制失败，请手动全选复制', ok?'good':'bad');
+        return false;
+      } },
+    { text:'关闭', value:null }
+  ]});
+}
+function copyText(t){
+  if (navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(t).catch(()=>execCopyFallback(t));
+    return true;
+  }
+  return execCopyFallback(t);
+}
+function execCopyFallback(t){
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove(); return true;
+  } catch { return false; }
+}
+function importFromFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try { importFromText(String(reader.result), file.name); }
+    catch (e){ toast(`导入失败：${e.message}`, 'bad', 3600); }
+  };
+  reader.readAsText(file);
+}
+function importFromText(text, sourceName='粘贴的 JSON'){
+  const p = JSON.parse(text);
+  validatePlan(p); // 先校验通过再动历史与场景，避免失败留下悬空快照
+  beginHistory();
+  applyPlan(p);
+  endHistory(`导入方案（${sourceName}）`);
+  toast(`方案导入成功：${p.name || sourceName}`, 'good');
+  log(`导入方案「${p.name || sourceName}」（${p.blocks.length} 块）`, 'good');
+}
+function validatePlan(p){
+  if (!p || !Array.isArray(p.blocks)) throw new Error('缺少 blocks 数组');
+  for (const b of p.blocks){
+    if (!Array.isArray(b.size) || b.size.length!==3 || b.size.some(x=>!(x>0))) throw new Error(`块 #${b.id} 尺寸非法`);
+    if (!Array.isArray(b.position) || b.position.length!==3) throw new Error(`块 #${b.id} 位置非法`);
+  }
+  if (!Array.isArray(p.order)) p.order = p.blocks.map(b=>b.id);
+}
+async function importJsonModal(){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = '<div style="margin-bottom:8px;color:var(--muted)">粘贴方案 JSON：</div>';
+  const ta = document.createElement('textarea');
+  wrap.appendChild(ta);
+  const r = await openModal({ title:'粘贴 JSON 导入', bodyNode:wrap, buttons:[
+    { text:'导入', primary:true, value:'__go__' }, { text:'取消', value:null }
+  ]});
+  if (r !== '__go__') return;
+  try { importFromText(ta.value); }
+  catch (e){ toast(`导入失败：${e.message}`, 'bad', 3600); log(`导入失败：${e.message}`, 'bad'); }
+}
+
+/* 自动保存（debounce） */
+let autosaveTimer = null;
+function scheduleAutosave(){
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(()=>{
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(planJSON('自动保存')));
+    } catch { /* 存储满等情况忽略 */ }
+  }, 800);
+}
+function restoreAutosave(){
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return false;
+    const p = JSON.parse(raw);
+    if (!p.blocks?.length) return false;
+    applyPlan(p);
+    log('已恢复上次浏览器自动保存的工作区', 'info');
+    return true;
+  } catch { return false; }
+}
+
+/* ============================================================
+ * 18. 整体预览 / 视角适配
+ * ============================================================ */
+function fitAll(){
+  const blocks = [...state.blocks.values()];
+  if (!blocks.length){ controls.target.set(0,1,0); camera.position.set(11,9.5,13); controls.update(); return; }
+  const box = new THREE.Box3();
+  for (const b of blocks) box.expandByObject(b.mesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z, 2);
+  const fov = camera.fov * Math.PI/180;
+  const dist = Math.abs(maxDim / 2 / Math.tan(fov/2)) * 1.5;
+  const dirV = new THREE.Vector3(1, 0.75, 1.1).normalize();
+  controls.target.copy(center);
+  camera.position.copy(center).add(dirV.multiplyScalar(dist));
+  controls.update();
+}
+function togglePreview(force){
+  state.preview = force ?? !state.preview;
+  document.body.classList.toggle('preview', state.preview);
+  controls.autoRotate = state.preview;
+  controls.autoRotateSpeed = 1.4;
+  grid.visible = !state.preview;
+  highlightGroup.visible = !state.preview;
+  if (state.preview){ fitAll(); log('进入整体预览模式', 'info'); }
+  else { controls.autoRotate=false; log('退出整体预览模式', 'info'); }
+}
+
+/* ============================================================
+ * 19. 冰块库卡片 / 拖拽接入
+ * ============================================================ */
+function buildLibrary(){
+  const grid = $('libGrid');
+  for (const t of ICE_TYPES){
+    const card = document.createElement('div');
+    card.className = 'ice-card';
+    card.draggable = true;
+    card.innerHTML =
+      `<div class="ice-cube" style="opacity:${0.55 + Math.min(t.size[1],3)/8}"></div>` +
+      `<div class="nm">${t.name}</div><div class="dim">${t.size.join(' × ')}</div>`;
+    card.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('application/x-ice-type', t.typeId);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    card.addEventListener('click', ()=> addBlock(t, null));
+    grid.appendChild(card);
+  }
+}
+const viewport = $('viewport');
+['dragover','dragenter'].forEach(ev => viewport.addEventListener(ev, e=>{
+  e.preventDefault();
+  viewport.classList.add('dragover');
+  e.dataTransfer.dropEffect = 'copy';
+}));
+viewport.addEventListener('dragleave', e=>{
+  if (e.target === viewport || !viewport.contains(e.relatedTarget)) viewport.classList.remove('dragover');
+});
+viewport.addEventListener('drop', e=>{
+  e.preventDefault();
+  viewport.classList.remove('dragover');
+  // 文件导入优先
+  const file = e.dataTransfer.files?.[0];
+  if (file){ importFromFile(file); return; }
+  const typeId = e.dataTransfer.getData('application/x-ice-type');
+  const type = ICE_TYPES.find(t=>t.typeId===typeId);
+  if (!type) return;
+  const rect = canvas.getBoundingClientRect();
+  ndc.x = ((e.clientX-rect.left)/rect.width)*2-1;
+  ndc.y = -((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(ndc, camera);
+  const ground = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+  const p = new THREE.Vector3();
+  if (raycaster.ray.intersectPlane(ground, p)) addBlock(type, p);
+  else addBlock(type, null);
+});
+// 整个窗口接受方案文件拖入
+window.addEventListener('dragover', e=>{ if (e.dataTransfer.types.includes('Files')) e.preventDefault(); });
+window.addEventListener('drop', e=>{
+  if (e.target.closest('#viewport')) return;
+  const file = e.dataTransfer.files?.[0];
+  if (file && file.name.endsWith('.json')){ e.preventDefault(); importFromFile(file); }
+});
+
+/* ============================================================
+ * 20. UI 控件 / 键盘
+ * ============================================================ */
+$('threshold').addEventListener('input', e=>{
+  state.threshold = Number(e.target.value);
+  $('thresholdVal').textContent = state.threshold.toFixed(1);
+  $('stSnap').textContent = `吸附：${state.snapEnabled?'开':'关'} / 阈值 ${state.threshold.toFixed(1)}`;
+});
+$('snapToggle').addEventListener('change', e=>{
+  state.snapEnabled = e.target.checked;
+  $('stSnap').textContent = `吸附：${state.snapEnabled?'开':'关'} / 阈值 ${state.threshold.toFixed(1)}`;
+  toast(state.snapEnabled ? '面吸附已开启' : '面吸附已关闭', 'info', 1400);
+});
+$('verticalToggle').addEventListener('change', e=>{
+  state.verticalMode = e.target.checked;
+  toast(state.verticalMode ? '垂直移动模式：拖动可调整高度' : '水平移动模式', 'info', 1600);
+});
+$('btnUndo').onclick = undo;
+$('btnRedo').onclick = redo;
+$('btnValidate').onclick = ()=>{ const r = runFullValidation(true); toast(vtxtSafe(r), verdictOf(r)[0], 2600); };
+$('btnPreview').onclick = ()=>togglePreview(true);
+$('btnExitPreview').onclick = ()=>togglePreview(false);
+$('btnSavePlan').onclick = savePlan;
+$('btnExport').onclick = exportPlan;
+$('btnImportFile').onclick = ()=>$('fileInput').click();
+$('btnImportJson').onclick = importJsonModal;
+$('fileInput').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if (f) importFromFile(f);
+  e.target.value = '';
+});
+$('btnHelp').onclick = ()=>{
+  const wrap = document.createElement('div');
+  const keys = [
+    ['鼠标左键拖空白','旋转视角'],['滚轮','缩放 / 右键平移'],
+    ['拖动冰块','移动并触发面吸附'],['<span class="kbd">V</span>','切换垂直移动模式'],
+    ['<span class="kbd">Q</span> / <span class="kbd">E</span>','绕 Y 轴旋转 ±90°'],
+    ['<span class="kbd">R</span> / <span class="kbd">F</span>','绕 X 轴旋转 ±90°'],
+    ['<span class="kbd">T</span> / <span class="kbd">G</span>','绕 Z 轴旋转 ±90°'],
+    ['<span class="kbd">↑</span> / <span class="kbd">↓</span>','块体升降 0.5'],
+    ['<span class="kbd">Del</span>','删除选中块'],['<span class="kbd">Esc</span>','取消选中 / 退出预览'],
+    ['<span class="kbd">Ctrl</span>+<span class="kbd">Z</span>','撤销（保留最近 20 步）'],
+    ['<span class="kbd">Ctrl</span>+<span class="kbd">Y</span>','重做'],
+    ['<span class="kbd">Ctrl</span>+<span class="kbd">S</span>','保存方案'],
+  ];
+  wrap.className = 'help-grid';
+  wrap.innerHTML = keys.map(([k,d])=>`<div>${k}</div><div class="d">${d}</div>`).join('');
+  openModal({ title:'快捷键与操作说明', bodyNode:wrap, buttons:[{text:'知道了', primary:true, value:null}] });
+};
+
+window.addEventListener('keydown', e=>{
+  if ($('modalMask').classList.contains('open')) return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && e.key.toLowerCase()==='z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (ctrl && e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); return; }
+  if (ctrl && e.key.toLowerCase()==='s'){ e.preventDefault(); savePlan(); return; }
+  if (e.key === 'Escape'){
+    if (state.preview) togglePreview(false);
+    else selectBlock(null);
+    return;
+  }
+  if (e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); deleteSelected(); return; }
+  const map = {
+    q:['y',-1], e:['y',+1],
+    r:['x',-1], f:['x',+1],
+    t:['z',-1], g:['z',+1],
+  };
+  const k = e.key.toLowerCase();
+  if (map[k]){ rotateSelected(map[k][0], map[k][1]); return; }
+  if (e.key === 'ArrowUp'){ e.preventDefault(); nudgeSelected(0.5); }
+  if (e.key === 'ArrowDown'){ e.preventDefault(); nudgeSelected(-0.5); }
+  if (k === 'v'){
+    state.verticalMode = !state.verticalMode;
+    $('verticalToggle').checked = state.verticalMode;
+    toast(state.verticalMode?'垂直移动模式':'水平移动模式','info',1400);
+  }
+});
+
+/* ============================================================
+ * 21. 渲染循环 / FPS
+ * ============================================================ */
+let frames = 0, fpsTimer = performance.now();
+renderer.setAnimationLoop(()=>{
+  controls.update();
+  if (hoverHelper) hoverHelper.update();
+  renderer.render(scene, camera);
+  frames++;
+  const t = performance.now();
+  if (t - fpsTimer >= 500){
+    $('stFps').textContent = `FPS ${Math.round(frames*1000/(t-fpsTimer))}`;
+    frames = 0; fpsTimer = t;
+  }
+});
+
+/* ============================================================
+ * 22. 启动
+ * ============================================================ */
+buildLibrary();
+refreshOrderList();
+refreshPlanList();
+updateHistoryButtons();
+runFullValidation(false);
+restoreAutosave();
+refreshOrderList();
+initManifold().then(()=> runFullValidation(false));
+log('工作台就绪：从冰块库拖入冰块开始拼装', 'good');
+
+// 只读调试句柄：供自动化测试把世界坐标投影到屏幕坐标（不改变任何应用行为）
+window.__iceDebug = {
+  state,
+  computeAABB,
+  project: (worldArr) => {
+    const v = new THREE.Vector3(...worldArr).project(camera);
+    const rect = canvas.getBoundingClientRect();
+    return { x: rect.left + (v.x*0.5+0.5)*rect.width, y: rect.top + (-v.y*0.5+0.5)*rect.height };
+  },
+  analyze: () => fullAnalyze(false),
+};
+</script>
+</body>
+</html>
