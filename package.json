@@ -1,0 +1,20 @@
+{
+  "name": "micro-building-floor-splitter",
+  "version": "1.0.0",
+  "description": "Svelte + Three.js + manifold-3d miniature building floor splitting workbench",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "manifold-3d": "^3.5.5",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.2",
+    "svelte": "^5.59.1",
+    "vite": "^8.3.8"
+  }
+}
