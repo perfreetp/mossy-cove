@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": ".selftest",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": []
+  },
+  "include": ["src/lib/math3d.ts", "src/lib/kinematics.ts", "src/lib/mirror.ts", "src/lib/catalog.ts", "src/lib/terrain.ts", "src/lib/demoSkeleton.ts", "src/store/skeletonStore.ts", "src/types.ts", "src/test/math3d.test.ts", "src/test/perf.test.ts"]
+}

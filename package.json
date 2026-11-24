@@ -1,0 +1,26 @@
+{
+  "name": "paleo-skeleton-rig",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "selftest": "tsc -p tsconfig.selftest.json && node scripts/fix-esm.mjs && node .selftest/test/math3d.test.js && node .selftest/test/perf.test.js"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "0.169.0",
+    "three-mesh-bvh": "0.7.8"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "0.169.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.9"
+  }
+}
