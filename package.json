@@ -1,0 +1,24 @@
+{
+  "name": "bone-fragment-reassembly",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "manifold-3d": "^3.5.5",
+    "ml-matrix": "^6.15.1",
+    "three": "^0.181.2",
+    "vue": "^3.5.24"
+  },
+  "devDependencies": {
+    "@types/three": "^0.181.0",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.2",
+    "vue-tsc": "^3.1.4"
+  }
+}
