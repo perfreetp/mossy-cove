@@ -1,0 +1,31 @@
+{
+  "name": "ballistic-trajectory-recon",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test:math": "node scripts/math-test.mjs",
+    "test:func": "node scripts/func-test.cjs",
+    "test:io": "node scripts/io-test.cjs",
+    "test:model": "node scripts/model-test.cjs",
+    "test": "npm run test:math && npm run test:func && npm run test:io && npm run test:model"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^7.34.0",
+    "@babylonjs/loaders": "^7.34.0",
+    "@babylonjs/materials": "^7.34.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
