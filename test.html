@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>运行时逻辑测试</title>
+    <style>
+      body { font-family: monospace; background: #111; color: #ddd; padding: 16px; }
+      .ok { color: #69f0ae; }
+      .fail { color: #ff5252; }
+      h1 { font-size: 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>浇冒口工具 · 运行时逻辑测试</h1>
+    <pre id="out"></pre>
+    <script type="module">
+      import { computeFlow } from '/src/lib/flow.ts';
+      import { buildSampleDesign, DEFAULT_CASTING } from '/src/lib/sample.ts';
+      import { createCasting, linkRiserToHotspot } from '/src/lib/casting.ts';
+      import { snapToEndpoints } from '/src/lib/snapping.ts';
+      import { HistoryStack } from '/src/lib/history.ts';
+      import { circleArea } from '/src/lib/geometry.ts';
+
+      const out = document.getElementById('out');
+      let failures = 0;
+      const log = (cls, msg) => {
+        const line = document.createElement('div');
+        line.className = cls;
+        line.textContent = msg;
+        out.appendChild(line);
+      };
+      const assert = (cond, msg) => {
+        if (!cond) { failures++; log('fail', 'FAIL: ' + msg); }
+        else log('ok', 'ok  : ' + msg);
+      };
+
+      const { state } = buildSampleDesign(DEFAULT_CASTING);
+      const casting = createCasting(DEFAULT_CASTING);
+
+      // 1. 流量守恒
+      const flow = computeFlow(state.nodes, state.channels, 0.15);
+      const ingateIds = state.nodes.filter((n) => n.kind === 'ingate').map((n) => n.id);
+      const totalIngate = ingateIds.reduce((s, id) => s + (flow.nodes[id]?.inflow ?? 0), 0);
+      assert(Math.abs(totalIngate - 1) < 1e-9, `内浇口流量守恒，总和=${totalIngate.toFixed(6)}`);
+
+      // 2. 等径分叉均分
+      const j1 = state.nodes.find((n) => n.kind === 'junction');
+      const ratios = Object.values(flow.nodes[j1.id].splitRatios);
+      assert(
+        ratios.length === 3 && Math.abs(ratios[0] - ratios[1]) < 1e-9,
+        `j1 两条等径内浇口均分: ${ratios.map((r) => r.toFixed(3)).join('/')}`
+      );
+
+      // 3. 截面积比例分配的精确性：A=πd²/4
+      const modified = structuredClone(state);
+      const target = modified.channels.find((c) => c.type === 'ingate');
+      target.diameter = 24;
+      const flow2 = computeFlow(modified.nodes, modified.channels, 0.15);
+      const j1b = flow2.nodes[j1.id];
+      const areas = modified.channels
+        .filter((c) => c.from === j1.id)
+        .map((c) => circleArea(c.diameter));
+      const expectedBig = areas[0] / areas.reduce((a, b) => a + b, 0);
+      const actualBig = j1b.splitRatios[target.id];
+      assert(Math.abs(actualBig - expectedBig) < 1e-9,
+        `粗管份额按截面积比例: 期望 ${expectedBig.toFixed(4)} 实际 ${actualBig.toFixed(4)}`);
+
+      // 4. 失衡标记
+      const unbalanced = Object.values(flow2.nodes)
+        .filter((n) => !n.balanced && Object.keys(n.splitRatios).length >= 2);
+      assert(unbalanced.length >= 1, `不等径触发失衡标记 (${unbalanced.length} 个节点变红)`);
+
+      // 5. 断开后下游归零并重分配
+      const cut = structuredClone(state);
+      const first = cut.channels[0];
+      cut.channels = cut.channels.filter((c) => c.id !== first.id);
+      const flow3 = computeFlow(cut.nodes, cut.channels, 0.15);
+      const downstreamCount = cut.nodes.length - 1;
+      assert(flow3.detachedNodeIds.length === downstreamCount,
+        `断开直浇道后 ${flow3.detachedNodeIds.length}/${downstreamCount} 个下游节点断流`);
+
+      // 6. 吸附
+      const exact = snapToEndpoints(state.nodes[3].position, state.nodes, null);
+      assert(exact?.nodeId === state.nodes[3].id, '拖动位置精确吸附到已有端点');
+      const far = snapToEndpoints({ x: 9999, y: 9999, z: 9999 }, state.nodes, null);
+      assert(far === null, '远处位置不触发吸附');
+
+      // 7. 冒口热节距离自动测量
+      const link = linkRiserToHotspot(state.risers[0].position, casting.hotspots);
+      assert(!!link.linkedHotSpotId && link.distance !== null && link.distance >= 0,
+        `冒口连接距离自动测量: ${link.distance?.toFixed(1)} mm → ${casting.hotspots.find((h) => h.id === link.linkedHotSpotId)?.label}`);
+
+      // 8. 冒口上限
+      assert(state.risers.length === 2 && state.risers.length <= 8, `示例冒口数 ${state.risers.length} 在上限 8 内`);
+
+      // 9. 撤销/重做
+      const history = new HistoryStack();
+      history.push('删节点', state);
+      const mutated = structuredClone(state);
+      mutated.nodes = mutated.nodes.slice(0, 2);
+      const undone = history.undo(mutated);
+      assert(undone.state.nodes.length === state.nodes.length, '撤销恢复已删除节点');
+      const redone = history.redo(undone.state);
+      assert(redone.state.nodes.length === 2 && history.canRedo === false, '重做回到变更后状态');
+
+      // 10. 三层级
+      const levels = new Set(state.channels.map((c) => c.level));
+      assert(levels.has(1) && levels.has(2) && levels.has(3), '浇道包含 L1/L2/L3 三个层级');
+
+      log(failures === 0 ? 'ok' : 'fail', failures === 0 ? '\nALL TESTS PASSED' : `\n${failures} FAILURES`);
+      window.__TEST_RESULT__ = failures === 0 ? 'PASS' : 'FAIL';
+    </script>
+  </body>
+</html>

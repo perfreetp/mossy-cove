@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>导出文件验证</title></head>
+  <body>
+    <pre id="out">运行中…</pre>
+    <script type="module">
+      import { store } from '/src/lib/store.svelte.ts';
+      import { buildCSV, buildJSON } from '/src/lib/exporter.ts';
+
+      const json = buildJSON(store.buildExportFile());
+      const csv = buildCSV(
+        store.nodes, store.channels, store.risers, store.flow,
+        (id) => store.hotspots.find((h) => h.id === id)?.label ?? '—',
+        store.unbalancedNodeIds
+      );
+
+      const parsed = JSON.parse(json);
+      const checks = [];
+      const check = (cond, msg) => checks.push((cond ? 'ok  : ' : 'FAIL: ') + msg);
+
+      check(parsed.format === 'gating-riser-design', 'JSON 含格式标识 gating-riser-design');
+      check(parsed.version === 1, 'JSON 版本号为 1');
+      check(Array.isArray(parsed.gating.nodes) && parsed.gating.nodes.length === store.nodes.length,
+        `JSON 节点数 ${parsed.gating.nodes.length}`);
+      check(Array.isArray(parsed.gating.channels) && parsed.gating.channels.length === store.channels.length,
+        `JSON 通道数 ${parsed.gating.channels.length}`);
+      check(parsed.risers.length === store.risers.length && parsed.risers.length <= 8,
+        `JSON 冒口数 ${parsed.risers.length}（上限 8）`);
+      check(Array.isArray(parsed.flowSummary.unbalancedNodeIds), 'JSON 含失衡汇总');
+      check(typeof parsed.casting.length === 'number', 'JSON 含铸件参数');
+
+      check(csv.startsWith('﻿'), 'CSV 带 UTF-8 BOM');
+      check(csv.includes('浇道通道') && csv.includes('节点') && csv.includes('冒口'), 'CSV 含三大分区');
+      check(csv.includes('L1') && csv.includes('L2') && csv.includes('L3'), 'CSV 含三层级标记');
+      check(csv.includes('流量份额') && csv.includes('连接距离mm'), 'CSV 含流量与冒口距离列');
+      const csvRows = csv.split('\n').filter((l) => l && !l.startsWith('#') && !l.startsWith('﻿'));
+      check(csvRows.length >= store.channels.length + store.nodes.length + store.risers.length + 3,
+        `CSV 数据行数 ${csvRows.length}`);
+
+      const failCount = checks.filter((c) => c.startsWith('FAIL')).length;
+      document.getElementById('out').textContent =
+        checks.join('\n') +
+        '\n\n===== JSON 预览 =====\n' + json.slice(0, 600) +
+        '\n\n===== CSV 预览 =====\n' + csv.slice(0, 700) +
+        '\n\n' + (failCount === 0 ? 'ALL EXPORT TESTS PASSED' : `${failCount} FAILURES`);
+      document.title = failCount === 0 ? 'EXPORT-OK' : 'EXPORT-FAIL';
+    </script>
+  </body>
+</html>

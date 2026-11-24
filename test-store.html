@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>仓库状态测试</title></head>
+  <body>
+    <pre id="out"></pre>
+    <script type="module">
+      import { store } from '/src/lib/store.svelte.ts';
+      import { RISER_LIMIT } from '/src/lib/types.ts';
+
+      const out = document.getElementById('out');
+      let failures = 0;
+      const assert = (cond, msg) => {
+        if (!cond) { failures++; out.textContent += 'FAIL: ' + msg + '\n'; }
+        else out.textContent += 'ok  : ' + msg + '\n';
+      };
+
+      store.resetSample();
+      const initialNodeCount = store.nodes.length;
+
+      // 1. 撤销快照在 $state Proxy 上不报错（回归 DataCloneError）
+      const before = store.nodes.length;
+      store.addNode('junction', { x: 1, y: 2, z: 3 });
+      assert(store.nodes.length === before + 1, 'addNode 生效');
+      assert(store.canUndo === true, '操作后可撤销');
+      store.undo();
+      assert(store.nodes.length === before, '撤销删除新增节点（Proxy 深拷贝回归）');
+      store.redo();
+      assert(store.nodes.length === before + 1, '重做恢复新增节点');
+      store.undo();
+      assert(store.nodes.length === initialNodeCount, '回到示例初始节点数');
+
+      // 2. 实时调径：选一条分叉下游的内浇口（根直浇道份额恒为 1，不适合验证）
+      const targetChannel = store.channels.find((c) => c.type === 'ingate');
+      const channelId = targetChannel.id;
+      const oldDiameter = store.channelById(channelId).diameter;
+      const oldShare = store.flow.channels[channelId].share;
+      const undoStateBefore = store.canUndo;
+      store.setChannelDiameter(channelId, oldDiameter + 8, true);
+      assert(store.channelById(channelId).diameter === oldDiameter + 8, 'live 调径立即写入');
+      assert(store.canUndo === undoStateBefore, 'live 调径不压入历史栈');
+      const newShare = store.flow.channels[channelId].share;
+      assert(newShare > oldShare,
+        `管径增大→份额上升（${(oldShare * 100).toFixed(1)}% → ${(newShare * 100).toFixed(1)}%），flow 派生实时重算`);
+      // 正式压栈后再 live 调整，撤销应恢复到压栈时的值
+      store.snapshot('调整管径');
+      store.setChannelDiameter(channelId, oldDiameter, true);
+      store.undo();
+      assert(
+        Math.abs(store.channelById(channelId).diameter - (oldDiameter + 8)) < 1e-9,
+        '撤销恢复调径前值（通过 id 重新查找）'
+      );
+      store.redo();
+
+      // 3. 断开 → 下游归零重分配
+      const cutId = store.channels[0].id;
+      const downstreamBefore = store.flow.detachedNodeIds.length;
+      store.disconnectChannel(cutId);
+      assert(store.channels.every((c) => c.id !== cutId), '断开后通道被移除');
+      assert(store.flow.detachedNodeIds.length > downstreamBefore,
+        `断开后断流节点增加到 ${store.flow.detachedNodeIds.length}`);
+      store.undo();
+      assert(store.channels.some((c) => c.id === cutId), '撤销恢复被断开的通道');
+      assert(store.flow.detachedNodeIds.length === downstreamBefore, '撤销后断流恢复');
+
+      // 4. 重连（撤销后用 id 重新取对象）
+      const reconId = store.channels[0].id;
+      const oldTo = store.channelById(reconId).to;
+      const another = store.nodes.find(
+        (n) => n.id !== store.channelById(reconId).from && n.id !== oldTo
+      );
+      if (another) {
+        store.reconnectChannel(reconId, 'to', another.id);
+        assert(store.channelById(reconId).to === another.id, '重连端点生效');
+        store.undo();
+        assert(store.channelById(reconId).to === oldTo, '撤销恢复原连接');
+      }
+
+      // 5. 冒口上限 8
+      store.resetSample();
+      let added = 0;
+      for (let i = 0; i < RISER_LIMIT + 3; i++) {
+        const r = store.addRiser({ x: i * 10, y: store.casting.height, z: 0 });
+        if (r) added++;
+      }
+      assert(store.risers.length === RISER_LIMIT,
+        `冒口数量封顶在 ${RISER_LIMIT}（新增成功 ${added} 次）`);
+      assert(store.riserLimitReached === true, 'riserLimitReached 标志为真');
+
+      // 6. 冒口测距（热节由 store 自己维护，无渲染层也可用）
+      const riser = store.risers[0];
+      assert(store.hotspots.length > 0, `store 自带热节数据（${store.hotspots.length} 个）`);
+      assert(riser.linkedHotSpotId !== null && riser.distance !== null && riser.distance >= 0,
+        `冒口自动关联热节，距离 ${riser.distance?.toFixed(1)}mm`);
+      const distBeforeMove = riser.distance;
+      store.moveRiser(riser.id, { ...riser.position, x: riser.position.x + 40 });
+      assert(store.risers[0].distance !== null && store.risers[0].distance !== distBeforeMove,
+        `拖动冒口后距离重新测量（${distBeforeMove?.toFixed(1)} → ${store.risers[0].distance?.toFixed(1)}mm）`);
+
+      // 7. 删节点级联
+      store.resetSample();
+      const nodeCount = store.nodes.length;
+      const victim = store.nodes[0];
+      const linkedCount = store.channels.filter(
+        (c) => c.from === victim.id || c.to === victim.id
+      ).length;
+      store.deleteNode(victim.id);
+      assert(store.nodes.length === nodeCount - 1, '节点被删除');
+      assert(
+        store.channels.every((c) => store.nodeById(c.from) && store.nodeById(c.to)),
+        `删除节点级联清理 ${linkedCount} 条关联浇道，无悬空引用`
+      );
+
+      out.textContent += failures === 0 ? '\nALL STORE TESTS PASSED' : `\n${failures} FAILURES`;
+      document.title = failures === 0 ? 'STORE-OK' : 'STORE-FAIL';
+    </script>
+  </body>
+</html>
