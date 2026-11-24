@@ -1,0 +1,181 @@
+:root {
+  --bg-900: #0b1220;
+  --bg-800: #111c30;
+  --bg-700: #1a2740;
+  --bg-600: #243352;
+  --line: #2a3b5c;
+  --text-100: #e6edf7;
+  --text-300: #a7b6cc;
+  --text-500: #6b7c96;
+  --accent: #38bdf8;
+  --accent-strong: #0ea5e9;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --ok: #22c55e;
+  font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text-100);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  background: var(--bg-900);
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text-100);
+  background: var(--bg-600);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  background: #2f4368;
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent-strong);
+  border-color: var(--accent);
+  color: #04222f;
+  font-weight: 600;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+button.danger {
+  border-color: #7f1d1d;
+  color: #fecaca;
+}
+
+button.ghost {
+  background: transparent;
+}
+
+button.active {
+  background: var(--accent-strong);
+  border-color: var(--accent);
+  color: #04222f;
+  font-weight: 600;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 12px;
+  background: var(--bg-800);
+  color: var(--text-100);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 5px 8px;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.workspace {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.expand-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 30;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 16px;
+}
+
+/* 通用面板 */
+.panel {
+  background: rgba(17, 28, 48, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+}
+
+.panel h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.section {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(42, 59, 92, 0.6);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.row + .row {
+  margin-top: 8px;
+}
+
+.label {
+  color: var(--text-300);
+  min-width: 56px;
+}
+
+.num-input {
+  width: 78px;
+}
+
+.muted {
+  color: var(--text-500);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-600);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
