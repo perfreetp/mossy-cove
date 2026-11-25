@@ -1,0 +1,29 @@
+{
+  "name": "mortise-tenon-section-tool",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test:logic": "esbuild test/smoke.ts --bundle --platform=node --format=esm --outfile=test/smoke.mjs --log-level=warning && node test/smoke.mjs",
+    "test:browser": "node test/cdp-runner.mjs"
+  },
+  "dependencies": {
+    "earcut": "^2.2.4",
+    "solid-js": "^1.9.3",
+    "three": "^0.170.0",
+    "three-mesh-bvh": "^0.7.8"
+  },
+  "devDependencies": {
+    "@types/earcut": "^2.1.4",
+    "@types/three": "^0.170.0",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.11",
+    "vite-plugin-solid": "^2.10.2"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
+  }
+}
