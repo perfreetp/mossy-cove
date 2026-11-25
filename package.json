@@ -1,0 +1,30 @@
+{
+  "name": "fossil-section-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "化石内部结构剖面查看工具 — Svelte + three.js + manifold-3d",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "e2e": "node tests/run-e2e.cjs"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.2",
+    "@types/node": "^26.6.7",
+    "@types/three": "^0.187.0",
+    "chrome-remote-interface": "^0.34.0",
+    "svelte": "^5.59.1",
+    "svelte-check": "^4.7.8",
+    "typescript": "~5.9.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  },
+  "dependencies": {
+    "manifold-3d": "^3.5.5",
+    "three": "^0.187.0"
+  }
+}
