@@ -1,0 +1,24 @@
+{
+  "name": "miniature-veg-scatter",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "微缩景观沙盘植被散布工具 - TypeScript + Web Components + PixiJS + pixi-viewport",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc --noEmit",
+    "sanity": "tsx scripts/sanity.ts"
+  },
+  "dependencies": {
+    "pixi-viewport": "^7.0.3",
+    "pixi.js": "^8.23.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.18.1",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0"
+  }
+}

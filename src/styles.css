@@ -1,0 +1,165 @@
+/* ============ 全局布局与设计变量（浅色 DOM 外壳） ============ */
+:root {
+  --bg-app: #0e141b;
+  --bg-topbar: #131b24;
+  --bg-panel: #16202b;
+  --bg-panel-2: #1b2734;
+  --bg-control: #202e3d;
+  --bg-control-hover: #28394c;
+  --line: #28384a;
+  --line-strong: #35495e;
+  --text: #e7eef6;
+  --text-dim: #9db0c3;
+  --text-faint: #6c8197;
+  --accent: #5fd08a;
+  --accent-strong: #34b36a;
+  --accent-soft: rgba(95, 208, 138, 0.14);
+  --tree: #3fae6a;
+  --bush: #9ccc5c;
+  --info: #5ab0ef;
+  --warn: #e2a455;
+  --danger: #e06a5b;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.42);
+  --topbar-h: 58px;
+  --left-w: 308px;
+  --right-w: 286px;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-app);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+body { min-width: 980px; }
+
+button, input, select { font: inherit; }
+
+.app-shell {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--left-w) minmax(0, 1fr) var(--right-w);
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  grid-template-areas:
+    "top top top"
+    "left view right";
+  background:
+    radial-gradient(1200px 700px at 60% -10%, #182431 0%, transparent 60%),
+    var(--bg-app);
+}
+
+/* ============ 顶栏 ============ */
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, #151e29, #121a23);
+  border-bottom: 1px solid var(--line);
+  z-index: 20;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.brand-mark {
+  display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 10px;
+  color: #0c1a12;
+  background: linear-gradient(145deg, #7fe3a6, #37b56f);
+  box-shadow: 0 4px 14px rgba(63, 190, 116, 0.35);
+}
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+.brand-text strong { font-size: 15px; letter-spacing: 1px; }
+.brand-text span { font-size: 11px; color: var(--text-faint); letter-spacing: 2px; }
+
+veg-toolbar { flex: 1 1 auto; min-width: 0; }
+
+/* ============ 侧栏面板 ============ */
+.panel {
+  background: var(--bg-panel);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panel-left { grid-area: left; border-right: 1px solid var(--line); }
+.panel-right { grid-area: right; border-left: 1px solid var(--line); }
+
+scatter-panel, layer-list {
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #2c3e52 transparent;
+}
+scatter-panel::-webkit-scrollbar,
+layer-list::-webkit-scrollbar { width: 8px; }
+scatter-panel::-webkit-scrollbar-thumb,
+layer-list::-webkit-scrollbar-thumb { background: #2c3e52; border-radius: 8px; }
+
+/* ============ 视口区域 ============ */
+.viewport-wrap {
+  grid-area: view;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #10171f;
+}
+
+viewport-canvas { position: absolute; inset: 0; display: block; }
+
+.band-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(660px, calc(100% - 48px));
+  z-index: 10;
+}
+
+/* ============ Toast ============ */
+.toast-root {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+}
+.toast {
+  padding: 9px 16px;
+  border-radius: 10px;
+  background: rgba(24, 35, 48, 0.96);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+  color: var(--text);
+  font-size: 13px;
+  animation: toast-in 0.22s ease;
+  max-width: 420px;
+}
+.toast.success { border-color: rgba(95, 208, 138, 0.55); }
+.toast.error { border-color: rgba(224, 106, 91, 0.6); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1180px) {
+  :root { --left-w: 280px; --right-w: 260px; }
+}
